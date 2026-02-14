@@ -1,70 +1,30 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T15:45:12.353Z",
+  "generatedAt": "2026-02-14T16:38:37.324Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 3,
-    "implemented": 3,
+    "total": 1,
+    "implemented": 0,
     "items": [
       {
-        "id": "REQ-26",
-        "summary": "Add the 3 user-uploaded images as static frontend assets and create optimized background variants suitable for full-width page backgrounds (desktop + mobile), stored under `frontend/public/assets/generated/`.",
-        "status": "implemented",
+        "id": "REQ-39",
+        "summary": "Update the navigation/menu ordering so the \"Order History\" button appears below the \"My Account\" button (i.e., directly after it) wherever both items are shown together (especially in the mobile slide-out menu). Keep all user-facing text in English.",
+        "status": "missing",
         "plannedFiles": [
-          "frontend/public/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg",
-          "frontend/public/assets/generated/travel-bg-resort-view-1.dim_1920x1080.jpg",
-          "frontend/public/assets/generated/travel-bg-resort-view-2.dim_1920x1080.jpg"
+          "frontend/src/components/layout/HeaderNav.tsx"
         ],
-        "matchedFiles": [
-          "frontend/public/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg",
-          "frontend/public/assets/generated/travel-bg-resort-view-1.dim_1920x1080.jpg",
-          "frontend/public/assets/generated/travel-bg-resort-view-2.dim_1920x1080.jpg"
-        ]
-      },
-      {
-        "id": "REQ-27",
-        "summary": "Apply the uploaded images as background images in suitable places across the app while preserving text readability: (1) use one image as the Home page hero section background with a dark/soft overlay, (2) use another image as a subtle header/hero background accent for the Hotels & Stays page, and (3) use the third image as a subtle background accent for the Sales Store page. Keep all user-facing text in English.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/HotelBookingPage.tsx",
-          "frontend/src/pages/SalesStorePage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/HomePage.tsx",
-          "frontend/src/pages/HotelBookingPage.tsx",
-          "frontend/src/pages/SalesStorePage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-28",
-        "summary": "Implement a reusable CSS pattern for background images (e.g., a wrapper class with `background-size: cover`, `background-position: center`, and an overlay layer), and apply it without modifying any files under `frontend/src/components/ui/*` or other immutable paths.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/index.css"
-        ],
-        "matchedFiles": [
-          "frontend/src/index.css"
-        ]
+        "matchedFiles": []
       }
     ]
   },
   "changedFiles": [
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/public/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg",
-    "frontend/public/assets/generated/travel-bg-resort-view-1.dim_1920x1080.jpg",
-    "frontend/public/assets/generated/travel-bg-resort-view-2.dim_1920x1080.jpg",
-    "frontend/src/index.css",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/HotelBookingPage.tsx",
-    "frontend/src/pages/SalesStorePage.tsx",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

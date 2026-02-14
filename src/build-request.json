@@ -1,81 +1,38 @@
 {
   "kind": "build_request",
-  "title": "Add uploaded travel photos as page background images in suitable sections",
+  "title": "Reorder navigation so Order History appears below My Account",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-26",
-      "text": "Add the 3 user-uploaded images as static frontend assets and create optimized background variants suitable for full-width page backgrounds (desktop + mobile), stored under `frontend/public/assets/generated/`.",
+      "id": "REQ-39",
+      "text": "Update the navigation/menu ordering so the \"Order History\" button appears below the \"My Account\" button (i.e., directly after it) wherever both items are shown together (especially in the mobile slide-out menu). Keep all user-facing text in English.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-6"
+          "msg-5"
         ],
         "quotes": [
-          "set as back ground image with suitable places"
+          "move the order history  button below My Account button"
         ]
       },
       "acceptanceCriteria": [
-        "`frontend/public/assets/generated/` contains the optimized background image files derived from the uploaded images.",
-        "Background variants are sized/cropped appropriately for wide screens and remain visually acceptable on mobile (no critical subjects cut off).",
-        "Image files are referenced directly from the frontend (no backend routing)."
-      ]
-    },
-    {
-      "id": "REQ-27",
-      "text": "Apply the uploaded images as background images in suitable places across the app while preserving text readability: (1) use one image as the Home page hero section background with a dark/soft overlay, (2) use another image as a subtle header/hero background accent for the Hotels & Stays page, and (3) use the third image as a subtle background accent for the Sales Store page. Keep all user-facing text in English.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "set as back ground image with suitable places"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Home page hero section renders with a background image and an overlay that keeps the headline and buttons clearly readable in both light and dark mode.",
-        "Hotels & Stays page includes a visually subtle background/hero accent image that does not reduce form/card readability.",
-        "Sales Store page includes a visually subtle background/hero accent image that does not reduce product/cart/checkout readability.",
-        "No user-facing text is changed to non-English while implementing these backgrounds."
-      ]
-    },
-    {
-      "id": "REQ-28",
-      "text": "Implement a reusable CSS pattern for background images (e.g., a wrapper class with `background-size: cover`, `background-position: center`, and an overlay layer), and apply it without modifying any files under `frontend/src/components/ui/*` or other immutable paths.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-6"
-        ],
-        "quotes": [
-          "set as back ground image with suitable places"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Background styling is implemented via app/page components and/or global CSS (e.g., `frontend/src/index.css`) without editing any immutable UI component sources.",
-        "Background images do not cause layout shift and do not break sticky header readability (header remains legible against the background).",
-        "Pages continue to render correctly with Tailwind and existing theme variables in both light and dark mode."
+        "In the mobile slide-out menu in `frontend/src/components/layout/HeaderNav.tsx`, the \"Order History\" button is listed below the \"My Account\" button (and not above it).",
+        "No existing routes or navigation behaviors change (\"Order History\" still navigates to `/order-history`; \"My Account\" still opens the account/auth modal).",
+        "User-facing labels remain in English (e.g., \"My Account\", \"Order History\")."
       ]
     }
   ],
   "constraints": [
-    "Use React + TypeScript + Tailwind CSS; do not introduce other frontend frameworks.",
-    "Do not edit immutable frontend paths: `frontend/src/hooks/useInternetIdentity.ts`, `frontend/src/hooks/useInternetIdentity.tsx`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`, and anything under `frontend/src/components/ui`.",
-    "Store background images as static assets in `frontend/public/assets/generated/` and reference them from the frontend.",
-    "Backend must remain unchanged for this request (no Motoko changes required)."
+    "Do not modify any files under the immutable frontend paths (e.g., `frontend/src/components/ui/*`, `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`).",
+    "Keep the backend single-actor architecture; no backend changes are required for this UI-only reordering."
   ],
   "nonGoals": [
-    "Implementing actual image upload or image management UI within the app.",
-    "Adding new routes, new modules, or changing any booking/order business logic.",
-    "Adding animations, carousels, or slideshow background rotation unless explicitly requested."
+    "Do not change authentication logic or available sign-in methods.",
+    "Do not add new routes or new navigation destinations.",
+    "Do not redesign the header layout beyond the requested ordering change."
   ],
   "imageRequirements": {
     "required": [],
-    "edits": [
-      "Create a wide, background-ready crop with a soft dark overlay-ready tone (gettyimages-1454662719-612x612.jpg > travel-bg-hero-couple.dim_1920x1080.jpg)",
-      "Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509758-612x612.jpg > travel-bg-resort-view-1.dim_1920x1080.jpg)",
-      "Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509765-612x612.jpg > travel-bg-resort-view-2.dim_1920x1080.jpg)"
-    ]
+    "edits": []
   }
 }

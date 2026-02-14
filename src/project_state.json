@@ -1,20 +1,21 @@
 {
   "schemaVersion": "1.0.0",
-  "projectStateVersion": 17,
+  "projectStateVersion": 27,
   "summary": "Update Travel Break authentication to use name + mobile number (removing Google/Gmail and Internet Identity), and add partial payment rules: 10% to confirm bookings and flexible product sales payments (full or 40% upfront + remaining cash on delivery).",
   "architectural_notes": [
     "Email-based confirmations/notifications are excluded due to email feature being disabled; use WhatsApp notification to owner instead.",
     "Site theme uses a multi-color palette: white, blue, orange, green, purple, red.",
     "Use Indian Rupee (₹/INR) as the default currency for all prices and checkout-related amounts; avoid USD ($) in UI.",
     "Authentication should use name + mobile number sign-in; remove Google/Gmail Sign-In and Internet Identity from the auth flow.",
-    "Payments: booking confirmation requires 10% part payment; product sales support full payment or 40% upfront + remaining cash on delivery."
+    "Payments: booking confirmation requires 10% part payment; product sales support full payment or 40% upfront + remaining cash on delivery.",
+    "Logo styling: remove any black border and present the logo in a round/circular shape in the UI.",
+    "Background imagery: reduce the white backdrop/overlay so background images appear clearer while maintaining text readability."
   ],
   "known_issues": [
     "Automated email confirmation to customers and email notifications to owner cannot be implemented because email feature is disabled.",
     "Previous build attempt failed with error: \"AI was unable to fulfill your request. Consider simplifying or rewording your prompt.\""
   ],
-  "isFixRequest": false,
-  "imageRequirements": "## Edit Images\n- Create a wide, background-ready crop with a soft dark overlay-ready tone (gettyimages-1454662719-612x612.jpg > travel-bg-hero-couple.dim_1920x1080.jpg)\n- Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509758-612x612.jpg > travel-bg-resort-view-1.dim_1920x1080.jpg)\n- Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509765-612x612.jpg > travel-bg-resort-view-2.dim_1920x1080.jpg)",
+  "isFixRequest": true,
   "existing_features": [
     {
       "id": "feature-create-the-core-app-structure-and-navigation-for-a-platform-named-travel-break-with-routes-pages-for-1-hotel-stay-cottage-booking-single-page-2-cab-booking-single-page-3-acting-driver-booking-single-page-4-sales-store-separate-page-5-customer-care-page-and-6-payment-receiving-page",
@@ -223,6 +224,86 @@
         "REQ-28"
       ],
       "version": 1
+    },
+    {
+      "id": "feature-create-a-new-dedicated-page-for-hotel-customer-reviews-and-move-the-existing-detailed-review-content-reviewer-name-star-rating-and-review-text-out-of-the-hotels-stays-booking-page-into-this-new-page",
+      "title": "Create a new dedicated page for hotel customer reviews and move the existing detailed review content (reviewer name, star rating, and review text) out of the Hotels & Stays booking page into this new page.",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-new-route-for-the-hotel-customer-reviews-page-and-provide-a-navigation-path-from-the-hotels-stays-page-to-the-reviews-page",
+      "title": "Add a new route for the hotel customer reviews page and provide a navigation path from the Hotels & Stays page to the reviews page.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-hotels-stays-display-so-that-each-hotel-room-listing-shows-only-a-rating-summary-no-full-review-text-on-the-hotels-stays-booking-page",
+      "title": "Update the Hotels & Stays display so that each hotel/room listing shows only a rating summary (no full review text) on the Hotels & Stays booking page.",
+      "reqIds": [
+        "REQ-31"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-user-uploaded-logo-image-bold-adventurous-logo-for-travel-break-jpg-to-the-frontend-as-static-assets-under-frontend-public-assets-generated-including-web-optimized-variants-suitable-for-header-display-and-a-browser-favicon",
+      "title": "Add the user-uploaded logo image (\"Bold, Adventurous Logo for 'Travel Break'.jpg\") to the frontend as static assets under `frontend/public/assets/generated/`, including web-optimized variants suitable for header display and a browser favicon.",
+      "reqIds": [
+        "REQ-32"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-global-header-frontend-src-components-layout-headernav-tsx-to-display-the-new-travel-break-logo-image-in-place-of-the-current-placeholder-gradient-square-keeping-the-existing-travel-break-brand-text-visible-and-readable",
+      "title": "Update the global header (`frontend/src/components/layout/HeaderNav.tsx`) to display the new Travel Break logo image in place of the current placeholder gradient square, keeping the existing \"Travel Break\" brand text visible and readable.",
+      "reqIds": [
+        "REQ-33"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-index-html-to-reference-the-generated-favicon-asset-so-the-browser-tab-displays-the-travel-break-logo-favicon",
+      "title": "Update `frontend/index.html` to reference the generated favicon asset so the browser tab displays the Travel Break logo/favicon.",
+      "reqIds": [
+        "REQ-34"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-header-logo-presentation-to-appear-as-a-clean-round-logo-without-any-visible-black-border-while-keeping-the-existing-travel-break-brand-text-readable-replace-the-current-header-logo-image-usage-in-frontend-src-components-layout-headernav-tsx-with-a-round-circular-logo-asset-ensure-the-logo-renders-as-a-circle-e-g-equal-width-height-circular-crop-and-does-not-show-any-black-border-outline-keep-the-brand-text-travel-break-visible-next-to-the-logo-as-it-is-today",
+      "title": "Update the header logo presentation to appear as a clean, round logo without any visible black border, while keeping the existing \"Travel Break\" brand text readable.\n\n- Replace the current header logo image usage in `frontend/src/components/layout/HeaderNav.tsx` with a round/circular logo asset.\n- Ensure the logo renders as a circle (e.g., equal width/height, circular crop) and does not show any black border/outline.\n- Keep the brand text \"Travel Break\" visible next to the logo as it is today.",
+      "reqIds": [
+        "REQ-35"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-adjust-the-background-image-overlay-styling-so-background-images-are-clearer-with-a-reduced-white-backdrop-update-the-overlay-utility-styles-in-frontend-src-index-css-e-g-bg-overlay-light-and-bg-overlay-subtle-to-reduce-the-intensity-opacity-of-the-white-overlay-in-light-mode-preserve-text-readability-by-keeping-some-overlay-but-ensure-the-background-images-are-noticeably-more-visible-than-before-ensure-dark-mode-overlays-remain-appropriate-for-readability-do-not-make-dark-mode-backgrounds-too-bright",
+      "title": "Adjust the background-image overlay styling so background images are clearer with a reduced white backdrop.\n\n- Update the overlay utility styles in `frontend/src/index.css` (e.g., `.bg-overlay-light` and `.bg-overlay-subtle`) to reduce the intensity/opacity of the white overlay in light mode.\n- Preserve text readability by keeping some overlay, but ensure the background images are noticeably more visible than before.\n- Ensure dark mode overlays remain appropriate for readability (do not make dark mode backgrounds too bright).",
+      "reqIds": [
+        "REQ-36"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-authenticated-my-account-ui-so-that-the-navigation-buttons-links-for-order-history-support-and-payment-are-shown-directly-below-the-my-account-area-english-labels-this-should-be-available-from-the-existing-my-account-modal-opened-via-the-header-button",
+      "title": "Update the authenticated “My Account” UI so that the navigation buttons/links for “Order History”, “Support”, and “Payment” are shown directly below the “My Account” area (English labels). This should be available from the existing My Account modal opened via the header button.",
+      "reqIds": [
+        "REQ-37"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-mobile-slide-out-menu-so-that-order-history-support-and-payment-are-grouped-placed-below-the-my-account-menu-item-rather-than-appearing-above-it-while-keeping-existing-routes-and-behavior-unchanged",
+      "title": "Update the mobile slide-out menu so that “Order History”, “Support”, and “Payment” are grouped/placed below the “My Account” menu item (rather than appearing above it), while keeping existing routes and behavior unchanged.",
+      "reqIds": [
+        "REQ-38"
+      ],
+      "version": 1
     }
   ],
   "new_feature_requests": [
@@ -336,6 +417,44 @@
       "id": "AR-19",
       "summary": "Add suitable travel/place background image(s) and set them as the app/page background",
       "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-20",
+      "summary": "Move detailed customer reviews to a separate page; on each hotel display show only the rating (no full reviews)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Add a logo to the Travel Break app using the provided image asset (display in global header/nav and other suitable locations)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Update branding visuals: remove black border from logo, render logo in a round shape, and adjust background images to be clearer with less white backdrop/overlay",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-23",
+      "summary": "Update header/navigation so that under “My Account” it shows buttons/links for: Order History, Support (Customer Care), and Payment (Payment Receiving), placed below the My Account section",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-24",
+      "summary": "Move the “Order History” button to appear below the “My Account” button in the navigation/menu",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Update the navigation/menu ordering so the \"Order History\" button appears below the \"My Account\" button (i.e., directly after it) wherever both items are shown together (especially in the mobile slide-out menu). Keep all user-facing text in English.",
+      "reqIds": [
+        "REQ-39"
+      ],
       "status": "pending"
     }
   ],

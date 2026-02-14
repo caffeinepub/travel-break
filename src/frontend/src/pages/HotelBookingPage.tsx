@@ -8,14 +8,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CalendarIcon, CheckCircle2, Star, Info } from 'lucide-react';
+import { Loader2, CalendarIcon, CheckCircle2, Star, Info, ArrowRight } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { toast } from 'sonner';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { dateToNanoseconds, formatCurrency, formatDate } from '@/utils/format';
+import { getAverageRating, getRoomTypeRating } from '@/data/hotelReviews';
+import { useNavigate } from '@tanstack/react-router';
 import type { RoomType } from '../backend';
 
 export default function HotelBookingPage() {
+  const navigate = useNavigate();
   const { identity } = useInternetIdentity();
   const { data: roomTypes, isLoading } = useGetRoomTypes();
   const { data: myBookings } = useGetMyHotelBookings();
@@ -28,6 +31,7 @@ export default function HotelBookingPage() {
   const [bookingId, setBookingId] = useState<string>('');
 
   const isAuthenticated = !!identity;
+  const averageRating = getAverageRating();
 
   const numberOfNights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
@@ -197,15 +201,31 @@ export default function HotelBookingPage() {
               </CardContent>
             </Card>
 
-            {/* Guest Reviews */}
+            {/* Guest Reviews Summary */}
             <Card>
               <CardHeader>
-                <CardTitle>Guest Reviews</CardTitle>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Guest Reviews</CardTitle>
+                    <CardDescription className="flex items-center gap-2 mt-2">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                        <span className="font-semibold text-foreground">{averageRating}</span>
+                      </div>
+                      <span>Overall rating from our guests</span>
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <ReviewCard name="Sarah Johnson" rating={5} comment="Amazing stay! The rooms were spotless and the service was exceptional." />
-                <ReviewCard name="Michael Chen" rating={5} comment="Perfect location and great amenities. Will definitely come back!" />
-                <ReviewCard name="Emma Davis" rating={4} comment="Very comfortable and peaceful. Great value for money." />
+              <CardContent>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => navigate({ to: '/hotel-reviews' })}
+                >
+                  View all reviews
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -327,12 +347,21 @@ export default function HotelBookingPage() {
 }
 
 function RoomCard({ room, selected, onSelect }: { room: RoomType; selected: boolean; onSelect: (room: RoomType) => void }) {
+  // Get rating for this room type
+  const roomRating = getRoomTypeRating(room.name);
+  
   return (
     <Card className={`cursor-pointer transition-all ${selected ? 'ring-2 ring-primary' : ''}`} onClick={() => onSelect(room)}>
       <CardContent className="p-4">
         <div className="flex gap-4">
           <div className="flex-1">
-            <h3 className="font-semibold mb-2">{room.name}</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-semibold">{room.name}</h3>
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-medium">{roomRating}</span>
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2 mb-3">
               {room.features.map((feature) => (
                 <Badge key={feature} variant="secondary" className="text-xs">
@@ -362,20 +391,4 @@ function PlaceholderRoom({ type, onSelect }: { type: string; onSelect: (room: Ro
   };
 
   return <RoomCard room={placeholderRoom} selected={false} onSelect={onSelect} />;
-}
-
-function ReviewCard({ name, rating, comment }: { name: string; rating: number; comment: string }) {
-  return (
-    <div className="rounded-lg border p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="flex">
-          {Array.from({ length: rating }).map((_, i) => (
-            <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-          ))}
-        </div>
-        <span className="font-medium text-sm">{name}</span>
-      </div>
-      <p className="text-sm text-muted-foreground">{comment}</p>
-    </div>
-  );
 }

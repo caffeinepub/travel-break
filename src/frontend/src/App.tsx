@@ -3,6 +3,7 @@ import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import AppShell from './components/layout/AppShell';
 import HotelBookingPage from './pages/HotelBookingPage';
+import HotelReviewsPage from './pages/HotelReviewsPage';
 import CabBookingPage from './pages/CabBookingPage';
 import ActingDriverBookingPage from './pages/ActingDriverBookingPage';
 import SalesStorePage from './pages/SalesStorePage';
@@ -30,6 +31,12 @@ const hotelRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/hotel',
   component: HotelBookingPage,
+});
+
+const hotelReviewsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/hotel-reviews',
+  component: HotelReviewsPage,
 });
 
 const cabRoute = createRoute({
@@ -62,28 +69,29 @@ const paymentRoute = createRoute({
   component: PaymentReceivingPage,
 });
 
-const ownerRoute = createRoute({
+const ownerDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/owner',
+  path: '/owner-dashboard',
   component: OwnerDashboardPage,
 });
 
-const ordersRoute = createRoute({
+const orderHistoryRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/orders',
+  path: '/order-history',
   component: OrderHistoryPage,
 });
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
   hotelRoute,
+  hotelReviewsRoute,
   cabRoute,
   driverRoute,
   storeRoute,
   customerCareRoute,
   paymentRoute,
-  ownerRoute,
-  ordersRoute,
+  ownerDashboardRoute,
+  orderHistoryRoute,
 ]);
 
 const router = createRouter({ routeTree });

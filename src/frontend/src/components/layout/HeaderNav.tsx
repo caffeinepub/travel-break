@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import AuthModal from '../auth/AuthModal';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { useOwnerAuth } from '@/hooks/useOwnerAuth';
+import { Separator } from '@/components/ui/separator';
 
 export default function HeaderNav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,7 +34,11 @@ export default function HeaderNav() {
             <div className="flex items-center gap-3">
               <Link to="/" className="flex items-center space-x-2">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 via-purple-500 to-orange-500" />
+                  <img 
+                    src="/assets/generated/travel-break-logo-round.dim_256x256.png" 
+                    alt="Travel Break Logo" 
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
                   <span className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-orange-600 bg-clip-text text-transparent">
                     Travel Break
                   </span>
@@ -52,7 +57,7 @@ export default function HeaderNav() {
                 </Button>
               </Link>
 
-              <Link to="/orders">
+              <Link to="/order-history">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -88,7 +93,7 @@ export default function HeaderNav() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate({ to: '/owner' })}
+                onClick={() => navigate({ to: '/owner-dashboard' })}
                 className="hidden md:flex gap-2"
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -123,7 +128,18 @@ export default function HeaderNav() {
                     </Button>
                   </Link>
 
-                  <Link to="/orders" onClick={() => setMobileOpen(false)}>
+                  <Button
+                    variant={isAuthenticated ? 'outline' : 'default'}
+                    onClick={() => {
+                      setMobileOpen(false);
+                      setAuthModalOpen(true);
+                    }}
+                    className="w-full"
+                  >
+                    {isAuthenticated ? 'My Account' : 'Sign In'}
+                  </Button>
+
+                  <Link to="/order-history" onClick={() => setMobileOpen(false)}>
                     <Button
                       variant="ghost"
                       className="w-full justify-start gap-2"
@@ -132,6 +148,28 @@ export default function HeaderNav() {
                       Order History
                     </Button>
                   </Link>
+
+                  <Link to="/customer-care" onClick={() => setMobileOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2"
+                    >
+                      <HeadphonesIcon className="h-4 w-4" />
+                      Support
+                    </Button>
+                  </Link>
+
+                  <Link to="/payment" onClick={() => setMobileOpen(false)}>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start gap-2"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      Payment
+                    </Button>
+                  </Link>
+
+                  <Separator />
 
                   {navLinks.map((link) => (
                     <Link key={link.to} to={link.to} onClick={() => setMobileOpen(false)}>
@@ -152,7 +190,7 @@ export default function HeaderNav() {
                       variant="outline"
                       onClick={() => {
                         setMobileOpen(false);
-                        navigate({ to: '/owner' });
+                        navigate({ to: '/owner-dashboard' });
                       }}
                       className="w-full justify-start gap-2"
                     >
@@ -160,17 +198,6 @@ export default function HeaderNav() {
                       Dashboard
                     </Button>
                   )}
-
-                  <Button
-                    variant={isAuthenticated ? 'outline' : 'default'}
-                    onClick={() => {
-                      setMobileOpen(false);
-                      setAuthModalOpen(true);
-                    }}
-                    className="w-full"
-                  >
-                    {isAuthenticated ? 'My Account' : 'Sign In'}
-                  </Button>
                 </nav>
               </SheetContent>
             </Sheet>

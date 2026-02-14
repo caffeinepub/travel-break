@@ -1,84 +1,36 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-14T15:45:12.348Z",
-  "summary": "Background-image CSS utilities were added and the Home page hero was updated to use a generated asset with an overlay. The diff summary also claims Hotels and Sales Store pages received subtle background accents. However, the required static image assets under `frontend/public/assets/generated/` are not present in the diff (no added files). Several unrelated business/auth/currency/query features were also modified/added, which were explicitly out of scope.",
+  "generatedAt": "2026-02-14T16:38:37.321Z",
+  "summary": "The diff does not implement the requested UI navigation reorder. The only modified file is `project_state.json`, and its changes describe unrelated authentication and payment-rule updates, which are outside the BuildRequest scope and constraints.",
   "missing_requirements": [
     {
-      "id": "REQ-26",
-      "requirement": "Add the 3 user-uploaded images as static frontend assets and create optimized background variants suitable for full-width page backgrounds (desktop + mobile), stored under `frontend/public/assets/generated/`.",
-      "reason": "The diff shows frontend code referencing `/assets/generated/...jpg`, but the diff reports no added files, so the actual image assets are not added/committed under `frontend/public/assets/generated/`.",
+      "id": "REQ-39",
+      "requirement": "Update the navigation/menu ordering so the \"Order History\" button appears below the \"My Account\" button wherever both items are shown together (especially in the mobile slide-out menu in `frontend/src/components/layout/HeaderNav.tsx`). Keep all user-facing text in English and do not change routes/behaviors.",
+      "reason": "No frontend navigation component files were modified. The only modified file is `project_state.json`, which does not show any change to `frontend/src/components/layout/HeaderNav.tsx` or any menu ordering implementation.",
       "evidence": [
-        "File diff summary: \"ADDED FILES: - none\"",
-        "frontend/src/pages/HomePage.tsx (references: url(/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg))"
+        "project_state.json (only modified file in diff)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Changed currency formatting to Indian Rupees (INR) with en-IN digit grouping.",
-      "reason": "Not requested by REQ-26/27/28 and outside the background-image scope; also falls under non-goal of not changing business logic-related formatting.",
+      "description": "Update authentication to use name + mobile number and remove Google/Gmail and Internet Identity.",
+      "reason": "Not requested; explicitly conflicts with the non-goal/constraints to not change authentication logic or sign-in methods.",
       "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/utils/format.ts\": currency now configured to format as INR with en-IN locale)"
+        "project_state.json (summary mentions \"Update Travel Break authentication to use name + mobile number (removing Google/Gmail and Internet Identity)\")"
       ]
     },
     {
-      "description": "Header navigation changes (branding, new Home/Order History buttons, admin access, mobile Sheet menu updates).",
-      "reason": "Not requested; unrelated UI/navigation changes beyond applying page background images.",
+      "description": "Add partial payment rules (10% to confirm bookings; flexible product sales payments such as full or 40% upfront + cash on delivery).",
+      "reason": "Not requested; BuildRequest specifies UI-only nav reordering with no backend changes required.",
       "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/components/layout/HeaderNav.tsx\": extensive nav/branding/menu changes)"
-      ]
-    },
-    {
-      "description": "Authentication modal changes including a non-functional Google/Gmail option with informational message.",
-      "reason": "Explicitly out of scope (non-goals mention no auth/module expansions; request is about background images only).",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/components/auth/AuthModal.tsx\": added Google/Gmail option message)"
-      ]
-    },
-    {
-      "description": "Added/changed React Query hooks and mutations for sales orders (update order date, cancel orders) and related invalidation behavior.",
-      "reason": "Directly violates the non-goal of not changing booking/order business logic.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/hooks/useQueries.ts\": new mutations for updating order date and cancelling orders)"
-      ]
-    },
-    {
-      "description": "Order History page enhancements allowing pending order date modification and order cancellation with confirmation dialog.",
-      "reason": "Not requested and is a booking/order business logic change (explicitly non-goal).",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/pages/OrderHistoryPage.tsx\": actions for date modification and cancellation)"
-      ]
-    },
-    {
-      "description": "Hotel booking logic/UI changed to include a 10% deposit requirement and payment breakdown.",
-      "reason": "Not requested; constitutes booking business logic changes, explicitly a non-goal.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/pages/HotelBookingPage.tsx\": payment breakdown with 10% deposit requirement)"
-      ]
-    },
-    {
-      "description": "Sales store checkout flow changed to include payment option selector (full vs 40% upfront + COD) and associated calculations.",
-      "reason": "Not requested; changes sales/checkout business logic, explicitly a non-goal.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/pages/SalesStorePage.tsx\": payment option selector full vs 40% upfront + COD)"
-      ]
-    },
-    {
-      "description": "App route configuration changes (added/modified routes and main app routing structure).",
-      "reason": "Non-goal explicitly disallows adding new routes/modules; request only asked for applying backgrounds in existing pages/sections.",
-      "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/App.tsx\": TanStack Router configuration including routes for multiple pages)"
+        "project_state.json (summary mentions \"add partial payment rules: 10%... flexible product sales payments\")"
       ]
     }
   ],
-  "confidence": 0.72,
+  "confidence": 0.86,
   "changed_files": [
-    "frontend-file-summaries.txt",
-    "frontend/src/index.css",
-    "frontend/src/pages/HomePage.tsx",
-    "frontend/src/pages/HotelBookingPage.tsx",
-    "frontend/src/pages/SalesStorePage.tsx",
     "project_state.json"
   ]
 }

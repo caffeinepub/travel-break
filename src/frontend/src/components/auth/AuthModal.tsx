@@ -2,12 +2,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { useQueryClient } from '@tanstack/react-query';
-import { LogIn, LogOut, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Loader2, History, HeadphonesIcon, CreditCard } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
 import ProfileSetupModal from './ProfileSetupModal';
 import { useGetCallerUserProfile } from '@/hooks/useQueries';
 import { useState } from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useNavigate } from '@tanstack/react-router';
+import { Separator } from '@/components/ui/separator';
 
 interface AuthModalProps {
   open: boolean;
@@ -19,6 +21,7 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
   const queryClient = useQueryClient();
   const { data: userProfile, isLoading: profileLoading, isFetched } = useGetCallerUserProfile();
   const [showGoogleMessage, setShowGoogleMessage] = useState(false);
+  const navigate = useNavigate();
 
   const isAuthenticated = !!identity;
   const isLoggingIn = loginStatus === 'logging-in';
@@ -45,6 +48,11 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
     setShowGoogleMessage(true);
   };
 
+  const handleNavigate = (path: string) => {
+    onOpenChange(false);
+    navigate({ to: path });
+  };
+
   const showProfileSetup = isAuthenticated && !profileLoading && isFetched && userProfile === null;
 
   return (
@@ -62,12 +70,47 @@ export default function AuthModal({ open, onOpenChange }: AuthModalProps) {
 
           <div className="flex flex-col gap-4 py-4">
             {isAuthenticated && identity && (
-              <div className="rounded-lg border border-border bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-1">Signed in as:</p>
-                <p className="text-xs text-muted-foreground font-mono break-all">
-                  {identity.getPrincipal().toString()}
-                </p>
-              </div>
+              <>
+                <div className="rounded-lg border border-border bg-muted/50 p-4">
+                  <p className="text-sm font-medium mb-1">Signed in as:</p>
+                  <p className="text-xs text-muted-foreground font-mono break-all">
+                    {identity.getPrincipal().toString()}
+                  </p>
+                </div>
+
+                <Separator />
+
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() => handleNavigate('/order-history')}
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
+                    <History className="h-4 w-4" />
+                    Order History
+                  </Button>
+
+                  <Button
+                    onClick={() => handleNavigate('/customer-care')}
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
+                    <HeadphonesIcon className="h-4 w-4" />
+                    Support
+                  </Button>
+
+                  <Button
+                    onClick={() => handleNavigate('/payment')}
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                  >
+                    <CreditCard className="h-4 w-4" />
+                    Payment
+                  </Button>
+                </div>
+
+                <Separator />
+              </>
             )}
 
             {!isAuthenticated && (
