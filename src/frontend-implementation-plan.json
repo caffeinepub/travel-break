@@ -1,0 +1,76 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Travel Break: static travel photo backgrounds for Home, Hotels, and Store",
+  "requirements": [
+    {
+      "id": "REQ-26",
+      "summary": "Add the 3 uploaded images as optimized, background-ready static assets under frontend/public/assets/generated/ using the specified generated filenames.",
+      "acceptanceCriteria": [
+        "`frontend/public/assets/generated/` contains the optimized background image files derived from the uploaded images.",
+        "Background variants are sized/cropped appropriately for wide screens and remain visually acceptable on mobile (no critical subjects cut off).",
+        "Image files are referenced directly from the frontend (no backend routing)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/public/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg",
+          "operation": "create",
+          "description": "Add optimized, wide background variant derived from gettyimages-1454662719-612x612.jpg for Home hero background."
+        },
+        {
+          "path": "frontend/public/assets/generated/travel-bg-resort-view-1.dim_1920x1080.jpg",
+          "operation": "create",
+          "description": "Add optimized, wide background variant derived from gettyimages-1250509758-612x612.jpg for Hotels & Stays accent background."
+        },
+        {
+          "path": "frontend/public/assets/generated/travel-bg-resort-view-2.dim_1920x1080.jpg",
+          "operation": "create",
+          "description": "Add optimized, wide background variant derived from gettyimages-1250509765-612x612.jpg for Sales Store accent background."
+        }
+      ]
+    },
+    {
+      "id": "REQ-27",
+      "summary": "Apply the uploaded images as readable background accents: Home hero background with overlay, Hotels & Stays subtle header/hero accent, and Sales Store subtle header/hero accent; keep all user-facing text in English.",
+      "acceptanceCriteria": [
+        "Home page hero section renders with a background image and an overlay that keeps the headline and buttons clearly readable in both light and dark mode.",
+        "Hotels & Stays page includes a visually subtle background/hero accent image that does not reduce form/card readability.",
+        "Sales Store page includes a visually subtle background/hero accent image that does not reduce product/cart/checkout readability.",
+        "No user-facing text is changed to non-English while implementing these backgrounds."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/HomePage.tsx",
+          "operation": "modify",
+          "description": "Replace the current gradient-only hero with a hero section that uses `frontend/public/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg` as the background image and applies the reusable overlay pattern to preserve text/button readability in light and dark mode."
+        },
+        {
+          "path": "frontend/src/pages/HotelBookingPage.tsx",
+          "operation": "modify",
+          "description": "Update the top title/intro area to include a subtle header/hero accent background using `frontend/public/assets/generated/travel-bg-resort-view-1.dim_1920x1080.jpg`, keeping the booking cards/forms visually dominant and readable."
+        },
+        {
+          "path": "frontend/src/pages/SalesStorePage.tsx",
+          "operation": "modify",
+          "description": "Update the top title/intro area (browse step) to include a subtle background accent using `frontend/public/assets/generated/travel-bg-resort-view-2.dim_1920x1080.jpg`, ensuring product grid/cart/checkout steps remain high-contrast and readable."
+        }
+      ]
+    },
+    {
+      "id": "REQ-28",
+      "summary": "Implement a reusable CSS background-image + overlay pattern via global CSS or page components, without modifying immutable UI component sources.",
+      "acceptanceCriteria": [
+        "Background styling is implemented via app/page components and/or global CSS (e.g., `frontend/src/index.css`) without editing any immutable UI component sources.",
+        "Background images do not cause layout shift and do not break sticky header readability (header remains legible against the background).",
+        "Pages continue to render correctly with Tailwind and existing theme variables in both light and dark mode."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Add a reusable global CSS pattern for background sections (e.g., a wrapper utility/class for full-width background images with cover/center/no-repeat and an overlay layer that can be tuned per page and respects light/dark theme variables), to be used by HomePage/HotelBookingPage/SalesStorePage without editing `frontend/src/components/ui/*` or other immutable paths."
+        }
+      ]
+    }
+  ]
+}

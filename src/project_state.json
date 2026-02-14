@@ -1,0 +1,346 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 17,
+  "summary": "Update Travel Break authentication to use name + mobile number (removing Google/Gmail and Internet Identity), and add partial payment rules: 10% to confirm bookings and flexible product sales payments (full or 40% upfront + remaining cash on delivery).",
+  "architectural_notes": [
+    "Email-based confirmations/notifications are excluded due to email feature being disabled; use WhatsApp notification to owner instead.",
+    "Site theme uses a multi-color palette: white, blue, orange, green, purple, red.",
+    "Use Indian Rupee (₹/INR) as the default currency for all prices and checkout-related amounts; avoid USD ($) in UI.",
+    "Authentication should use name + mobile number sign-in; remove Google/Gmail Sign-In and Internet Identity from the auth flow.",
+    "Payments: booking confirmation requires 10% part payment; product sales support full payment or 40% upfront + remaining cash on delivery."
+  ],
+  "known_issues": [
+    "Automated email confirmation to customers and email notifications to owner cannot be implemented because email feature is disabled.",
+    "Previous build attempt failed with error: \"AI was unable to fulfill your request. Consider simplifying or rewording your prompt.\""
+  ],
+  "isFixRequest": false,
+  "imageRequirements": "## Edit Images\n- Create a wide, background-ready crop with a soft dark overlay-ready tone (gettyimages-1454662719-612x612.jpg > travel-bg-hero-couple.dim_1920x1080.jpg)\n- Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509758-612x612.jpg > travel-bg-resort-view-1.dim_1920x1080.jpg)\n- Create a wide, background-ready crop with slightly reduced highlights for readability (gettyimages-1250509765-612x612.jpg > travel-bg-resort-view-2.dim_1920x1080.jpg)",
+  "existing_features": [
+    {
+      "id": "feature-create-the-core-app-structure-and-navigation-for-a-platform-named-travel-break-with-routes-pages-for-1-hotel-stay-cottage-booking-single-page-2-cab-booking-single-page-3-acting-driver-booking-single-page-4-sales-store-separate-page-5-customer-care-page-and-6-payment-receiving-page",
+      "title": "Create the core app structure and navigation for a platform named \"Travel Break\" with routes/pages for: (1) Hotel/Stay/Cottage booking (single page), (2) Cab booking (single page), (3) Acting driver booking (single page), (4) Sales store (separate page), (5) Customer Care page, and (6) Payment Receiving page.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-internet-identity-authentication-with-a-sign-in-log-in-modal-and-persist-sign-in-events-so-the-owner-can-view-stored-sign-in-details-and-the-total-number-of-sign-ins",
+      "title": "Implement Internet Identity authentication with a sign-in / log-in modal, and persist sign-in events so the owner can view stored sign-in details and the total number of sign-ins.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-hotel-stay-cottage-booking-page-as-a-single-page-that-includes-room-type-visualizer-room-types-with-key-attributes-a-rate-availability-calendar-showing-availability-trends-space-for-a-high-quality-image-gallery-guest-reviews-display-and-a-secure-checkout-section-to-confirm-and-submit-a-booking",
+      "title": "Build the Hotel/Stay/Cottage booking page as a single page that includes: room type visualizer (room types with key attributes), a rate/availability calendar showing availability trends, space for a high-quality image gallery, guest reviews display, and a secure checkout section to confirm and submit a booking.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-cab-booking-page-as-a-single-page-supporting-selection-of-vehicles-from-4-seater-up-to-22-seater-capture-trip-details-and-submit-a-cab-booking-request",
+      "title": "Build the Cab booking page as a single page supporting selection of vehicles from 4-seater up to 22-seater, capture trip details, and submit a cab booking request.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-acting-driver-booking-page-as-a-single-page-to-request-a-driver-capture-service-details-and-submit-an-acting-driver-booking-request",
+      "title": "Build the Acting Driver booking page as a single page to request a driver, capture service details, and submit an acting driver booking request.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-build-the-sales-store-module-as-a-separate-page-with-a-left-side-category-index-product-browsing-cart-functionality-and-a-checkout-flow-that-collects-delivery-address-contact-number-and-email-address-on-the-next-step-before-placing-the-order",
+      "title": "Build the Sales store module as a separate page with a left-side category index, product browsing, cart functionality, and a checkout flow that collects delivery address, contact number, and email address on the next step before placing the order.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-provide-an-owner-facing-view-to-manage-and-review-submitted-records-across-modules-hotel-bookings-cab-bookings-acting-driver-requests-and-sales-orders-including-basic-list-views-and-detail-views",
+      "title": "Provide an owner-facing view to manage and review submitted records across modules (hotel bookings, cab bookings, acting driver requests, and sales orders), including basic list views and detail views.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-customer-care-page-that-displays-contact-support-information-and-a-simple-inquiry-form-that-submits-messages-to-be-stored-for-owner-review",
+      "title": "Add a Customer Care page that displays contact/support information and a simple inquiry form that submits messages to be stored for owner review.",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-payment-receiving-page-that-provides-a-secure-clear-ui-for-users-to-record-payment-related-details-e-g-booking-order-reference-and-payment-note-and-submit-them-for-owner-review-without-sending-emails",
+      "title": "Add a Payment Receiving page that provides a secure, clear UI for users to record payment-related details (e.g., booking/order reference and payment note) and submit them for owner review, without sending emails.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-in-app-owner-notifications-for-new-bookings-orders-inquiries-as-a-replacement-for-email-whatsapp-notifications-and-clearly-label-that-email-and-whatsapp-notifications-are-not-available-in-this-build",
+      "title": "Implement in-app owner notifications for new bookings/orders/inquiries as a replacement for email/WhatsApp notifications, and clearly label that email and WhatsApp notifications are not available in this build.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-a-consistent-visual-theme-across-the-app-using-the-requested-color-combination-white-blue-orange-green-purple-and-red-with-coherent-typography-spacing-and-component-styling",
+      "title": "Apply a consistent visual theme across the app using the requested color combination: white, blue, orange, green, purple, and red, with coherent typography, spacing, and component styling.",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-shared-currency-formatting-utility-so-all-amounts-across-the-app-are-formatted-in-indian-rupees-inr-with-the-symbol-instead-of-usd",
+      "title": "Update the shared currency formatting utility so all amounts across the app are formatted in Indian Rupees (INR) with the ₹ symbol instead of USD ($).",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-any-user-facing-usd-specific-labels-text-e-g-amount-usd-with-inr-appropriate-wording-in-payment-and-checkout-related-forms",
+      "title": "Replace any user-facing USD-specific labels/text (e.g., 'Amount (USD)') with INR/₹-appropriate wording in payment and checkout-related forms.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clearly-visible-home-button-near-the-travel-break-title-in-the-global-header-so-users-can-quickly-navigate-back-to-the-home-page-from-any-page",
+      "title": "Add a clearly visible Home button near the \"Travel Break\" title in the global header so users can quickly navigate back to the home page from any page.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-authentication-modal-to-offer-a-clearly-labeled-google-gmail-sign-in-option-while-keeping-the-existing-internet-identity-authentication-as-the-only-working-sign-in-method-in-this-build",
+      "title": "Update the authentication modal to offer a clearly labeled \"Google (Gmail)\" sign-in option while keeping the existing Internet Identity authentication as the only working sign-in method in this build.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-user-facing-authentication-copy-across-the-header-and-auth-modal-to-avoid-implying-that-google-sign-in-is-implemented-when-it-is-not-and-to-keep-text-consistent-and-in-english",
+      "title": "Update user-facing authentication copy across the header and auth modal to avoid implying that Google Sign-In is implemented when it is not, and to keep text consistent and in English.",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-preserve-existing-owner-facing-sign-in-event-tracking-behavior-and-ensure-the-new-google-gmail-option-does-not-create-false-sign-in-events-unless-a-real-authenticated-session-is-established-via-the-existing-identity-mechanism",
+      "title": "Preserve existing owner-facing sign-in event tracking behavior and ensure the new Google/Gmail option does not create false sign-in events unless a real authenticated session is established via the existing identity mechanism.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-hotel-stay-cottage-booking-ui-to-enforce-and-clearly-communicate-the-10-deposit-requirement-on-frontend-src-pages-hotelbookingpage-tsx-show-a-payment-section-in-the-booking-form-that-states-a-10-deposit-is-required-to-confirm-your-booking-english-display-a-breakdown-total-10-deposit-due-now-remaining-amount-based-on-the-booking-total-shown-to-the-user-after-a-successful-booking-display-the-returned-booking-reference-id-to-the-user-in-the-confirmation-card-and-add-clear-instruction-to-submit-the-deposit-payment-record-using-the-payment-receiving-page-without-implying-actual-payment-processing-keep-all-user-facing-text-in-english",
+      "title": "Update the Hotel/Stay/Cottage booking UI to enforce and clearly communicate the 10% deposit requirement.\n\n- On `frontend/src/pages/HotelBookingPage.tsx`, show a “Payment” section in the booking form that states: “A 10% deposit is required to confirm your booking.” (English).\n- Display a breakdown (Total, 10% deposit due now, Remaining amount) based on the booking total shown to the user.\n- After a successful booking, display the returned booking reference/ID to the user in the confirmation card, and add clear instruction to submit the deposit payment record using the Payment Receiving page (without implying actual payment processing).\n- Keep all user-facing text in English.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-sales-store-checkout-to-offer-payment-options-full-payment-or-40-upfront-with-remaining-cash-on-delivery-on-frontend-src-pages-salesstorepage-tsx-in-the-checkout-delivery-details-step-add-a-required-payment-option-selection-with-exactly-these-options-english-pay-full-amount-now-pay-40-now-and-remaining-on-delivery-cash-on-delivery-show-a-price-breakdown-total-amount-due-now-remaining-cod-amount-that-updates-based-on-the-selection-when-placing-the-order-send-the-selected-payment-option-to-the-backend-so-it-is-stored-on-the-order-after-a-successful-order-display-the-returned-order-reference-id-and-show-the-payment-instructions-consistent-with-the-chosen-option-full-instruct-user-to-submit-a-payment-record-for-the-full-total-with-the-order-reference-40-cod-instruct-user-to-submit-a-payment-record-for-the-40-upfront-amount-with-the-order-reference-and-show-the-remaining-amount-as-pay-on-delivery-cod-keep-all-user-facing-text-in-english",
+      "title": "Update the Sales Store checkout to offer payment options: full payment OR 40% upfront with remaining cash on delivery.\n\n- On `frontend/src/pages/SalesStorePage.tsx` in the checkout “Delivery Details” step, add a required “Payment Option” selection with exactly these options (English):\n  - “Pay full amount now”\n  - “Pay 40% now and remaining on delivery (Cash on Delivery)” \n- Show a price breakdown (Total, Amount due now, Remaining/COD amount) that updates based on the selection.\n- When placing the order, send the selected payment option to the backend so it is stored on the order.\n- After a successful order, display the returned order reference/ID and show the payment instructions consistent with the chosen option:\n  - Full: instruct user to submit a payment record for the full total with the order reference.\n  - 40%+COD: instruct user to submit a payment record for the 40% upfront amount with the order reference, and show the remaining amount as “Pay on delivery (COD)”.\n- Keep all user-facing text in English.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-order-history-navigation-button-near-the-existing-home-button-in-the-global-header-next-to-the-travel-break-title-and-include-the-same-navigation-option-in-the-mobile-slide-out-menu",
+      "title": "Add an \"Order History\" navigation button near the existing \"Home\" button in the global header (next to the Travel Break title) and include the same navigation option in the mobile slide-out menu.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-create-a-new-order-history-page-that-displays-the-signed-in-user-s-sales-orders-using-existing-data-getmysalesorders-including-basic-order-details-and-a-clear-empty-state-when-there-are-no-orders",
+      "title": "Create a new Order History page that displays the signed-in user’s sales orders using existing data (getMySalesOrders), including basic order details and a clear empty state when there are no orders.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-new-route-for-the-order-history-page-and-wire-the-new-header-menu-order-history-button-to-navigate-to-it",
+      "title": "Add a new route for the Order History page and wire the new header/menu \"Order History\" button to navigate to it.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-order-history-ui-frontend-src-pages-orderhistorypage-tsx-to-let-signed-in-users-modify-the-date-and-cancel-an-order-ui-behavior-for-each-order-card-show-an-actions-area-only-when-order-status-is-pending-show-a-modify-date-action-that-lets-the-user-select-a-new-date-and-submit-the-change-a-cancel-order-action-when-status-is-confirmed-or-cancelled-hide-disable-these-actions-and-show-a-short-explanation-label-english-such-as-actions-are-available-only-for-pending-orders-interaction-details-date-modification-provide-a-date-picker-ui-reuse-the-existing-calendar-popover-approach-already-used-in-frontend-src-pages-hotelbookingpage-tsx-on-submit-call-the-new-backend-api-and-refresh-the-list-cancellation-require-a-confirmation-step-before-cancelling-acceptable-options-native-confirm-or-an-existing-dialog-component-if-already-available-without-editing-immutable-ui-sources-on-confirm-call-the-new-backend-api-and-refresh-the-list-show-success-error-feedback-in-english-use-the-existing-toast-pattern-used-elsewhere-in-the-app-data-wiring-add-react-query-mutations-in-frontend-src-hooks-usequeries-ts-for-the-new-backend-methods-and-invalidate-mysalesorders-on-success",
+      "title": "Update the Order History UI (`frontend/src/pages/OrderHistoryPage.tsx`) to let signed-in users modify the date and cancel an order.\n\nUI behavior:\n- For each order card, show an \"Actions\" area.\n- Only when `order.status` is `Pending`, show:\n  - A \"Modify Date\" action that lets the user select a new date and submit the change.\n  - A \"Cancel Order\" action.\n- When status is `Confirmed` or `Cancelled`, hide/disable these actions and show a short explanation label (English) such as \"Actions are available only for pending orders.\"\n\nInteraction details:\n- Date modification:\n  - Provide a date picker UI (reuse the existing Calendar/Popover approach already used in `frontend/src/pages/HotelBookingPage.tsx`).\n  - On submit, call the new backend API and refresh the list.\n- Cancellation:\n  - Require a confirmation step before cancelling (acceptable options: native `confirm(...)` or an existing dialog component if already available without editing immutable UI sources).\n  - On confirm, call the new backend API and refresh the list.\n- Show success/error feedback in English (use the existing toast pattern used elsewhere in the app).\n\nData wiring:\n- Add React Query mutations in `frontend/src/hooks/useQueries.ts` for the new backend methods and invalidate `['mySalesOrders']` on success.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-the-3-user-uploaded-images-as-static-frontend-assets-and-create-optimized-background-variants-suitable-for-full-width-page-backgrounds-desktop-mobile-stored-under-frontend-public-assets-generated",
+      "title": "Add the 3 user-uploaded images as static frontend assets and create optimized background variants suitable for full-width page backgrounds (desktop + mobile), stored under `frontend/public/assets/generated/`.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-apply-the-uploaded-images-as-background-images-in-suitable-places-across-the-app-while-preserving-text-readability-1-use-one-image-as-the-home-page-hero-section-background-with-a-dark-soft-overlay-2-use-another-image-as-a-subtle-header-hero-background-accent-for-the-hotels-stays-page-and-3-use-the-third-image-as-a-subtle-background-accent-for-the-sales-store-page-keep-all-user-facing-text-in-english",
+      "title": "Apply the uploaded images as background images in suitable places across the app while preserving text readability: (1) use one image as the Home page hero section background with a dark/soft overlay, (2) use another image as a subtle header/hero background accent for the Hotels & Stays page, and (3) use the third image as a subtle background accent for the Sales Store page. Keep all user-facing text in English.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-reusable-css-pattern-for-background-images-e-g-a-wrapper-class-with-background-size-cover-background-position-center-and-an-overlay-layer-and-apply-it-without-modifying-any-files-under-frontend-src-components-ui-or-other-immutable-paths",
+      "title": "Implement a reusable CSS pattern for background images (e.g., a wrapper class with `background-size: cover`, `background-position: center`, and an overlay layer), and apply it without modifying any files under `frontend/src/components/ui/*` or other immutable paths.",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Create Travel Break hotel/stay/cottage booking in a single page with room type visualizer, availability/rate calendar trends, image galleries, guest reviews, and secure checkout",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Create cab booking module (single page) supporting vehicles from 4-seater to 22-seater",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Create acting driver booking module (single page)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Create product sales module with separate sales page, left-side category index, cart, checkout, and collection of delivery address/contact number/email on next step",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Add customer care page and a payment receiving page",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Implement sign-in/login modal and owner-facing view/metric showing number of sign-ins and stored sign-in details",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Order notifications: WhatsApp notification to owner (email confirmations/notifications excluded)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Apply site color theme using white, blue, orange, green, purple, and red combination",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Update all pricing and currency displays across the platform to use Indian Rupee (₹/INR) instead of USD ($)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Add a Home button near the page title/header for quick navigation back to the home/main page",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "Replace authentication with sign-in using customer name and mobile number; remove Google/Gmail Sign-In and Internet Identity",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Hotel/Stay/Cottage booking: require 10% part payment to confirm booking",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Product sales checkout: offer full payment OR 40% upfront with remaining amount as cash on delivery",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "Update backend booking and sales order data to support partial-payment plans.\n\n- Extend the `HotelBooking` record in `backend/main.mo` to include fields needed to represent a required 10% deposit for confirmation (e.g., deposit percentage, deposit amount, remaining amount, and a simple payment-plan/mode enum).\n- Extend the `SalesOrder` record in `backend/main.mo` to include fields needed to represent either (a) full upfront payment or (b) 40% upfront payment with remaining amount as cash on delivery.\n- Update `bookHotel(...)` to compute and store the deposit-required fields for the booking (10% of total), and set initial booking/payment state accordingly.\n- Update `createSalesOrder(...)` to accept the customer’s selected payment option (full vs 40%+COD), compute/store upfront and remaining amounts, and store the selected payment plan in the order.\n- Ensure all existing admin/user query methods that return bookings/orders now return the enriched objects.\n- If existing state is already deployed and contains stored `HotelBooking` / `SalesOrder` records, add/adjust `backend/migration.mo` to migrate old records by populating the new fields with safe defaults (so upgrades do not trap and existing records remain readable).",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Show order history near the Home button in the global header/navigation",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Order History: allow users to modify booking/order date and cancel orders from the Order History page",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Add backend APIs that allow an authenticated user to (a) modify the date on their own sales order and (b) cancel their own sales order from the Order History page.\n\nScope:\n- Implement new shared methods in `backend/main.mo` for the caller to:\n  1) update their own `SalesOrder.orderDate` (date modification)\n  2) cancel their own order by setting `SalesOrder.status` to `#cancelled`\n- Authorization rules:\n  - Caller must be an authenticated user (`#user` permission)\n  - Caller can only update/cancel orders where `order.customer == caller`\n  - Only allow these actions when the current order status is `#pending` (do not allow changes to `#confirmed` or `#cancelled` orders)\n- Validation and errors:\n  - Trap with clear error messages when: order not found, unauthorized, or action not allowed due to status\n- Ensure existing queries (`getMySalesOrders`, `getAllSalesOrders`) reflect the updated order date/status after these actions.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Add suitable travel/place background image(s) and set them as the app/page background",
+      "reqIds": [],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Travel Break",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

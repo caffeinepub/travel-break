@@ -1,0 +1,15 @@
+{
+  "frontend/src/pages/CustomerCarePage.tsx": "Customer care page with inquiry submission form, contact information display, and user's inquiry history with proper enum handling for inquiry status.",
+  "frontend/src/pages/PaymentReceivingPage.tsx": "Payment receiving page allowing users to submit payment records with reference, amount (in INR), and notes, displaying payment history with proper enum handling for payment status.",
+  "frontend/src/pages/OwnerDashboardPage.tsx": "Owner dashboard with statistics, tabs for managing all bookings/orders/inquiries/payments, and recent activity feed with proper type handling for mixed record types.",
+  "frontend/src/index.css": "Global CSS file with Tailwind directives, Travel Break OKLCH color theme, and new utility classes for background images with overlay patterns that ensure text readability in both light and dark modes.",
+  "frontend/src/utils/format.ts": "Utility functions for formatting dates, timestamps, and currency values, now configured to format currency as Indian Rupees (INR) with Indian digit grouping using en-IN locale.",
+  "frontend/src/components/layout/HeaderNav.tsx": "Global header navigation component with Travel Break branding, Home and Order History buttons near the title, service navigation links, admin dashboard access, authentication controls, and mobile Sheet menu with all navigation options.",
+  "frontend/src/components/auth/AuthModal.tsx": "Authentication modal with Internet Identity sign-in and a non-functional Google/Gmail option that displays an informational message when clicked, without triggering any authentication events.",
+  "frontend/src/hooks/useQueries.ts": "React Query hooks for all backend operations including user profiles, bookings, sales orders with new mutations for updating order date and cancelling orders, inquiries, and payments with proper query invalidation.",
+  "frontend/src/pages/HotelBookingPage.tsx": "Hotel booking page with subtle background image (resort view 1) in header section, room selection tabs, date pickers, payment breakdown with 10% deposit requirement, and confirmation screen.",
+  "frontend/src/pages/SalesStorePage.tsx": "Sales store page with subtle background image (resort view 2) in header section, product grid, shopping cart, checkout flow with payment option selector (full vs 40% upfront + COD), and order confirmation screen.",
+  "frontend/src/pages/OrderHistoryPage.tsx": "Order History page displaying user's sales orders with order details, payment plan breakdown, delivery information, and actions section for pending orders allowing date modification via calendar picker and order cancellation with confirmation dialog.",
+  "frontend/src/App.tsx": "Main app component with TanStack Router configuration including all application routes (home, hotel, cab, driver, store, customer care, payment, owner dashboard, and order history) wrapped in ThemeProvider with Toaster.",
+  "frontend/src/pages/HomePage.tsx": "Home page with hero section featuring background image (travel couple) with overlay for text readability, service cards grid, and call-to-action buttons."
+}
