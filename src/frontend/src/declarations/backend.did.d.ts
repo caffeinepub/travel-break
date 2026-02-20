@@ -13,6 +13,7 @@ import type { Principal } from '@icp-sdk/core/principal';
 export interface ActingDriverRequest {
   'status' : BookingStatus,
   'serviceDate' : bigint,
+  'vehicleType' : string,
   'requestId' : string,
   'serviceDetails' : string,
   'bookingDate' : bigint,
@@ -21,6 +22,10 @@ export interface ActingDriverRequest {
 export type BookingStatus = { 'cancelled' : null } |
   { 'pending' : null } |
   { 'confirmed' : null };
+export interface CabAvailability {
+  'availableCount' : bigint,
+  'cabType' : string,
+}
 export interface CabBooking {
   'status' : BookingStatus,
   'bookingId' : string,
@@ -36,8 +41,10 @@ export interface CabType {
   'name' : string,
   'pricePerTrip' : bigint,
   'imageUrl' : string,
+  'offerPrice' : bigint,
   'capacity' : bigint,
 }
+export interface DateRange { 'checkIn' : bigint, 'checkOut' : bigint }
 export interface HotelBooking {
   'status' : BookingStatus,
   'depositAmount' : bigint,
@@ -82,6 +89,7 @@ export interface Product {
   'name' : string,
   'description' : string,
   'productId' : string,
+  'offerPrice' : bigint,
   'category' : string,
   'price' : bigint,
 }
@@ -90,6 +98,7 @@ export interface RoomType {
   'imageUrls' : Array<string>,
   'pricePerNight' : bigint,
   'name' : string,
+  'offerPrice' : bigint,
 }
 export interface SalesOrder {
   'status' : BookingStatus,
@@ -115,6 +124,7 @@ export type UserRole = { 'admin' : null } |
   { 'guest' : null };
 export interface _SERVICE {
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addRoomAvailability' : ActorMethod<[string, Array<DateRange>], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'bookCab' : ActorMethod<[string, string, string, bigint], string>,
   'bookHotel' : ActorMethod<[string, bigint, bigint], string>,
@@ -128,7 +138,9 @@ export interface _SERVICE {
   'getAllHotelBookings' : ActorMethod<[], Array<HotelBooking>>,
   'getAllInquiries' : ActorMethod<[], Array<Inquiry>>,
   'getAllPayments' : ActorMethod<[], Array<PaymentRecord>>,
+  'getAllRoomAvailability' : ActorMethod<[], Array<[string, Array<DateRange>]>>,
   'getAllSalesOrders' : ActorMethod<[], Array<SalesOrder>>,
+  'getCabAvailability' : ActorMethod<[], Array<CabAvailability>>,
   'getCabTypes' : ActorMethod<[], Array<CabType>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
@@ -138,11 +150,13 @@ export interface _SERVICE {
   'getMyInquiries' : ActorMethod<[], Array<Inquiry>>,
   'getMyPayments' : ActorMethod<[], Array<PaymentRecord>>,
   'getMySalesOrders' : ActorMethod<[], Array<SalesOrder>>,
+  'getRoomAvailability' : ActorMethod<[string], Array<DateRange>>,
   'getRoomTypes' : ActorMethod<[], Array<RoomType>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'requestActingDriver' : ActorMethod<[string, bigint], string>,
+  'requestActingDriver' : ActorMethod<[string, string, bigint], string>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'setCabAvailability' : ActorMethod<[string, bigint], undefined>,
   'submitInquiry' : ActorMethod<[string, string], string>,
   'submitPayment' : ActorMethod<[string, string, bigint], string>,
   'updateActingDriverRequestStatus' : ActorMethod<

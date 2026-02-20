@@ -1,10 +1,10 @@
 import Map "mo:core/Map";
 import Array "mo:core/Array";
 import Principal "mo:core/Principal";
-import Runtime "mo:core/Runtime";
-import Time "mo:core/Time";
-import Iter "mo:core/Iter";
 import Text "mo:core/Text";
+import Time "mo:core/Time";
+import Runtime "mo:core/Runtime";
+import Iter "mo:core/Iter";
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
@@ -26,6 +26,7 @@ actor {
     name : Text;
     features : [Text];
     pricePerNight : Nat;
+    offerPrice : Nat;
     imageUrls : [Text];
   };
 
@@ -33,6 +34,7 @@ actor {
     name : Text;
     capacity : Nat;
     pricePerTrip : Nat;
+    offerPrice : Nat;
     imageUrl : Text;
   };
 
@@ -73,6 +75,7 @@ actor {
   public type ActingDriverRequest = {
     requestId : Text;
     guest : Principal;
+    vehicleType : Text;
     serviceDetails : Text;
     serviceDate : Int;
     status : BookingStatus;
@@ -89,6 +92,7 @@ actor {
     name : Text;
     description : Text;
     price : Nat;
+    offerPrice : Nat;
     imageUrls : [Text];
     category : Text;
   };
@@ -135,17 +139,29 @@ actor {
     };
   };
 
+  public type CabAvailability = {
+    cabType : Text;
+    availableCount : Nat;
+  };
+
+  // Date Range Type for Unavailable Dates
+  public type DateRange = {
+    checkIn : Int;
+    checkOut : Int;
+  };
+
   // State
   let userProfiles = Map.empty<Principal, UserProfile>();
   let roomTypes = Map.empty<Text, RoomType>();
   let cabTypes = Map.empty<Text, CabType>();
-
   let hotelBookings = Map.empty<Text, HotelBooking>();
   let cabBookings = Map.empty<Text, CabBooking>();
   let actingDriverRequests = Map.empty<Text, ActingDriverRequest>();
   let salesOrders = Map.empty<Text, SalesOrder>();
   let inquiries = Map.empty<Text, Inquiry>();
   let payments = Map.empty<Text, PaymentRecord>();
+  let cabAvailabilityState = Map.empty<Text, CabAvailability>();
+  let roomAvailability = Map.empty<Text, [DateRange]>();
 
   // Authorization state
   let accessControlState = AccessControl.initState();
@@ -156,7 +172,31 @@ actor {
     prefix # "-" # Time.now().toText();
   };
 
-  // USER FUNCTIONS
+  // Internal helper to update room availability (not exposed publicly)
+  func updateRoomAvailabilityInternal(roomType : Text, bookingDates : DateRange) {
+    let existingRanges = switch (roomAvailability.get(roomType)) {
+      case (?ranges) { ranges };
+      case (null) { [] };
+    };
+
+    let newRanges = existingRanges.concat([bookingDates]);
+    roomAvailability.add(roomType, newRanges);
+  };
+
+  // Internal helper to remove room availability when booking is cancelled
+  func removeRoomAvailabilityInternal(roomType : Text, bookingDates : DateRange) {
+    let existingRanges = switch (roomAvailability.get(roomType)) {
+      case (?ranges) { ranges };
+      case (null) { [] };
+    };
+
+    let filteredRanges = existingRanges.filter(
+      func(range : DateRange) : Bool {
+        range.checkIn != bookingDates.checkIn or range.checkOut != bookingDates.checkOut
+      }
+    );
+    roomAvailability.add(roomType, filteredRanges);
+  };
 
   // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
@@ -181,12 +221,16 @@ actor {
   };
 
   // Public query functions (accessible to all including guests)
-  public query ({ caller }) func getRoomTypes() : async [RoomType] {
+  public query func getRoomTypes() : async [RoomType] {
     roomTypes.values().toArray();
   };
 
-  public query ({ caller }) func getCabTypes() : async [CabType] {
+  public query func getCabTypes() : async [CabType] {
     cabTypes.values().toArray();
+  };
+
+  public query func getCabAvailability() : async [CabAvailability] {
+    cabAvailabilityState.values().toArray();
   };
 
   // Booking functions (require authenticated users)
@@ -210,30 +254,62 @@ actor {
       paymentPlan = #depositRequired;
     };
     hotelBookings.add(bookingId, booking);
+
+    // Update room availability internally
+    updateRoomAvailabilityInternal(roomType, { checkIn = checkInDate; checkOut = checkOutDate });
+
     bookingId;
   };
 
-  public shared ({ caller }) func bookCab(cabType : Text, pickupLocation : Text, dropoffLocation : Text, pickupTime : Int) : async Text {
+  public shared ({ caller }) func bookCab(
+    cabType : Text,
+    pickupLocation : Text,
+    dropoffLocation : Text,
+    pickupTime : Int,
+  ) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can book cabs");
     };
-    let bookingId = generateId("cab");
-    let booking : CabBooking = {
-      bookingId;
-      guest = caller;
-      cabType;
-      pickupLocation;
-      dropoffLocation;
-      pickupTime;
-      totalPrice = 5000;
-      status = #pending;
-      bookingDate = Time.now();
+
+    // Check availability for the selected cab type
+    switch (cabAvailabilityState.get(cabType)) {
+      case (?availability) {
+        if (availability.availableCount == 0) {
+          Runtime.trap("No available cabs for the selected type");
+        };
+
+        let bookingId = generateId("cab");
+        let booking : CabBooking = {
+          bookingId;
+          guest = caller;
+          cabType;
+          pickupLocation;
+          dropoffLocation;
+          pickupTime;
+          totalPrice = 5000;
+          status = #pending;
+          bookingDate = Time.now();
+        };
+        cabBookings.add(bookingId, booking);
+
+        // Decrement the available count for the cab type safely
+        if (availability.availableCount > 0) {
+          let updatedAvailability = {
+            availability with
+            availableCount = availability.availableCount - 1 : Nat;
+          };
+          cabAvailabilityState.add(cabType, updatedAvailability);
+        };
+
+        bookingId;
+      };
+      case (null) {
+        Runtime.trap("Cab type not found");
+      };
     };
-    cabBookings.add(bookingId, booking);
-    bookingId;
   };
 
-  public shared ({ caller }) func requestActingDriver(serviceDetails : Text, serviceDate : Int) : async Text {
+  public shared ({ caller }) func requestActingDriver(vehicleType : Text, serviceDetails : Text, serviceDate : Int) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can request acting drivers");
     };
@@ -241,6 +317,7 @@ actor {
     let request : ActingDriverRequest = {
       requestId;
       guest = caller;
+      vehicleType;
       serviceDetails;
       serviceDate;
       status = #pending;
@@ -265,7 +342,12 @@ actor {
       case (#fullUpfront) { (totalPrice, 0) };
       case (#partialUpfront) {
         let upfront = totalPrice * 40 / 100;
-        let remaining = totalPrice - upfront;
+        // Safe conversion using Int32
+        let remaining = if (totalPrice >= upfront) {
+          totalPrice - upfront : Nat;
+        } else {
+          0;
+        };
         (upfront, remaining);
       };
       case (#cod) { (0, totalPrice) };
@@ -368,8 +450,7 @@ actor {
     payments.values().filter(func(p : PaymentRecord) : Bool { p.customer == caller }).toArray();
   };
 
-  // NEW: Sales Order Modifications for Caller
-  // Caller can update their own sales order date (if status is still pending)
+  // Sales Order Modifications for Caller
   public shared ({ caller }) func updateCallerSalesOrderDate(orderId : Text, newDate : Int) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap(
@@ -395,12 +476,9 @@ actor {
     };
   };
 
-  // Caller can cancel their own sales order (if status is still pending)
   public shared ({ caller }) func cancelCallerSalesOrder(orderId : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap(
-        "Unauthorized: Only authenticated users can cancel sales orders"
-      );
+      Runtime.trap("Unauthorized: Only authenticated users can cancel sales orders");
     };
     switch (salesOrders.get(orderId)) {
       case (null) {
@@ -421,8 +499,7 @@ actor {
     };
   };
 
-  // ADMIN FUNCTIONS
-
+  // Admin Functions
   public query ({ caller }) func getAllHotelBookings() : async [HotelBooking] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
       Runtime.trap("Unauthorized: Only admins can view all bookings");
@@ -472,10 +549,19 @@ actor {
     };
     switch (hotelBookings.get(bookingId)) {
       case (?booking) {
+        let oldStatus = booking.status;
         let updated = {
           booking with status = status;
         };
         hotelBookings.add(bookingId, updated);
+
+        // Update room availability when booking is cancelled
+        if (status == #cancelled and oldStatus != #cancelled) {
+          removeRoomAvailabilityInternal(
+            booking.roomType,
+            { checkIn = booking.checkInDate; checkOut = booking.checkOutDate }
+          );
+        };
       };
       case null {
         Runtime.trap("Booking not found");
@@ -566,5 +652,44 @@ actor {
         Runtime.trap("Payment not found");
       };
     };
+  };
+
+  public shared ({ caller }) func setCabAvailability(
+    cabType : Text,
+    availableCount : Nat,
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can update cab availability");
+    };
+
+    let cabAvailability : CabAvailability = {
+      cabType;
+      availableCount;
+    };
+    cabAvailabilityState.add(cabType, cabAvailability);
+  };
+
+  // Add Room Availability (for Admins)
+  public shared ({ caller }) func addRoomAvailability(
+    roomType : Text,
+    dateRanges : [DateRange],
+  ) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Only admins can add room availability");
+    };
+    roomAvailability.add(roomType, dateRanges);
+  };
+
+  // Get Room Availability (public query - no auth needed for viewing availability)
+  public query func getRoomAvailability(roomType : Text) : async [DateRange] {
+    switch (roomAvailability.get(roomType)) {
+      case (?dates) { dates };
+      case (null) { [] };
+    };
+  };
+
+  // Get All Room Availability (public query - no auth needed for viewing availability)
+  public query func getAllRoomAvailability() : async [(Text, [DateRange])] {
+    roomAvailability.toArray();
   };
 };

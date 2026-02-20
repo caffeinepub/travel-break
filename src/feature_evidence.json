@@ -1,4 +1,24 @@
 {
   "kind": "feature_evidence_report",
-  "features": []
+  "features": [
+    {
+      "featureId": "feature-remove-the-admin-dashboard-navigation-link-from-the-headernav-component-so-it-does-not-appear-in-the-main-navigation-menu-for-any-users",
+      "featureTitle": "Remove the admin dashboard navigation link from the HeaderNav component so it does not appear in the main navigation menu for any users",
+      "files": [
+        "frontend/src/components/layout/HeaderNav.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    }
+  ]
 }

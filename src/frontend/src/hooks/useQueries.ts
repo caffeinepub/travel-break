@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { UserProfile, RoomType, CabType, HotelBooking, CabBooking, ActingDriverRequest, SalesOrder, Inquiry, PaymentRecord, Product, PaymentPlan } from '../backend';
+import type { UserProfile, RoomType, CabType, HotelBooking, CabBooking, ActingDriverRequest, SalesOrder, Inquiry, PaymentRecord, Product, PaymentPlan, CabAvailability, DateRange } from '../backend';
 
 // User Profile
 export function useGetCallerUserProfile() {
@@ -52,6 +52,19 @@ export function useGetRoomTypes() {
   });
 }
 
+export function useGetRoomAvailability(roomType: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<DateRange[]>({
+    queryKey: ['roomAvailability', roomType],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getRoomAvailability(roomType);
+    },
+    enabled: !!actor && !isFetching && !!roomType,
+  });
+}
+
 export function useBookHotel() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -61,8 +74,10 @@ export function useBookHotel() {
       if (!actor) throw new Error('Actor not available');
       return actor.bookHotel(roomType, checkInDate, checkOutDate);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myHotelBookings'] });
+      // Invalidate availability for the specific room type
+      queryClient.invalidateQueries({ queryKey: ['roomAvailability', variables.roomType] });
     },
   });
 }
@@ -94,6 +109,37 @@ export function useGetCabTypes() {
   });
 }
 
+export function useGetCabAvailability() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<CabAvailability[]>({
+    queryKey: ['cabAvailability'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getCabAvailability();
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
+// Get blocked dates for cab bookings by cab type
+export function useGetCabBlockedDates(cabType: string) {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint[]>({
+    queryKey: ['cabBlockedDates', cabType],
+    queryFn: async () => {
+      if (!actor) return [];
+      // Get all cab bookings and filter by type and status
+      const allBookings = await actor.getAllCabBookings();
+      return allBookings
+        .filter(b => b.cabType === cabType && (b.status === 'pending' || b.status === 'confirmed'))
+        .map(b => b.pickupTime);
+    },
+    enabled: !!actor && !isFetching && !!cabType,
+  });
+}
+
 export function useBookCab() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
@@ -103,8 +149,11 @@ export function useBookCab() {
       if (!actor) throw new Error('Actor not available');
       return actor.bookCab(cabType, pickupLocation, dropoffLocation, pickupTime);
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['myCabBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['cabAvailability'] });
+      // Invalidate blocked dates for the specific cab type
+      queryClient.invalidateQueries({ queryKey: ['cabBlockedDates', variables.cabType] });
     },
   });
 }
@@ -123,17 +172,37 @@ export function useGetMyCabBookings() {
 }
 
 // Acting Driver
+// Get blocked dates for acting driver requests
+export function useGetActingDriverBlockedDates() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<bigint[]>({
+    queryKey: ['actingDriverBlockedDates'],
+    queryFn: async () => {
+      if (!actor) return [];
+      // Get all acting driver requests and filter by status
+      const allRequests = await actor.getAllActingDriverRequests();
+      return allRequests
+        .filter(r => r.status === 'pending' || r.status === 'confirmed')
+        .map(r => r.serviceDate);
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useRequestActingDriver() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ serviceDetails, serviceDate }: { serviceDetails: string; serviceDate: bigint }) => {
+    mutationFn: async ({ vehicleType, serviceDetails, serviceDate }: { vehicleType: string; serviceDetails: string; serviceDate: bigint }) => {
       if (!actor) throw new Error('Actor not available');
-      return actor.requestActingDriver(serviceDetails, serviceDate);
+      return actor.requestActingDriver(vehicleType, serviceDetails, serviceDate);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['myActingDriverRequests'] });
+      // Invalidate blocked dates
+      queryClient.invalidateQueries({ queryKey: ['actingDriverBlockedDates'] });
     },
   });
 }

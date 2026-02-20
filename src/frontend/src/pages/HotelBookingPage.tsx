@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useGetRoomTypes, useBookHotel, useGetMyHotelBookings } from '@/hooks/useQueries';
+import { useGetRoomTypes, useBookHotel, useGetMyHotelBookings, useGetRoomAvailability } from '@/hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,8 @@ import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { dateToNanoseconds, formatCurrency, formatDate } from '@/utils/format';
 import { getAverageRating, getRoomTypeRating } from '@/data/hotelReviews';
 import { useNavigate } from '@tanstack/react-router';
+import { isDateBlocked, getBlockedDatesFromRanges, doesRangeOverlap } from '@/utils/availability';
+import AvailabilityLegend from '@/components/availability/AvailabilityLegend';
 import type { RoomType } from '../backend';
 
 export default function HotelBookingPage() {
@@ -30,6 +32,9 @@ export default function HotelBookingPage() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [bookingId, setBookingId] = useState<string>('');
 
+  // Fetch blocked dates for the selected room type
+  const { data: blockedRanges = [] } = useGetRoomAvailability(selectedRoom?.name || '');
+
   const isAuthenticated = !!identity;
   const averageRating = getAverageRating();
 
@@ -40,7 +45,7 @@ export default function HotelBookingPage() {
 
   const totalPrice = useMemo(() => {
     if (!selectedRoom || numberOfNights <= 0) return 0;
-    return Number(selectedRoom.pricePerNight) * numberOfNights;
+    return Number(selectedRoom.offerPrice) * numberOfNights;
   }, [selectedRoom, numberOfNights]);
 
   const depositAmount = useMemo(() => {
@@ -51,6 +56,12 @@ export default function HotelBookingPage() {
     return totalPrice - depositAmount;
   }, [totalPrice, depositAmount]);
 
+  // Check if selected dates overlap with blocked ranges
+  const hasDateConflict = useMemo(() => {
+    if (!checkIn || !checkOut || blockedRanges.length === 0) return false;
+    return doesRangeOverlap(checkIn, checkOut, blockedRanges);
+  }, [checkIn, checkOut, blockedRanges]);
+
   const handleBooking = async () => {
     if (!isAuthenticated) {
       toast.error('Please sign in to book a room');
@@ -59,6 +70,11 @@ export default function HotelBookingPage() {
 
     if (!selectedRoom || !checkIn || !checkOut) {
       toast.error('Please select room type and dates');
+      return;
+    }
+
+    if (hasDateConflict) {
+      toast.error('Selected dates are not available. Please choose different dates.');
       return;
     }
 
@@ -215,19 +231,42 @@ export default function HotelBookingPage() {
                       <span>Overall rating from our guests</span>
                     </CardDescription>
                   </div>
+                  <Button variant="outline" size="sm" onClick={() => navigate({ to: '/hotel-reviews' })}>
+                    View All <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => navigate({ to: '/hotel-reviews' })}
-                >
-                  View all reviews
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </CardContent>
             </Card>
+
+            {/* My Bookings */}
+            {isAuthenticated && myBookings && myBookings.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Bookings</CardTitle>
+                  <CardDescription>Your hotel booking history</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {myBookings.map((booking) => (
+                      <div key={booking.bookingId} className="p-3 border rounded-lg space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{booking.roomType}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}
+                            </p>
+                          </div>
+                          <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'cancelled' ? 'destructive' : 'secondary'}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm">Total: {formatCurrency(Number(booking.totalPrice))}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Booking Form */}
@@ -235,8 +274,25 @@ export default function HotelBookingPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Book Your Stay</CardTitle>
+                <CardDescription>Select dates and confirm booking</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {selectedRoom && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="font-medium">{selectedRoom.name}</p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatCurrency(Number(selectedRoom.pricePerNight))}/night
+                      </span>
+                      <span className="text-lg font-bold text-primary">
+                        {formatCurrency(Number(selectedRoom.offerPrice))}/night
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {selectedRoom && <AvailabilityLegend />}
+
                 <div className="space-y-2">
                   <Label>Check-in Date</Label>
                   <Popover>
@@ -246,8 +302,26 @@ export default function HotelBookingPage() {
                         {checkIn ? format(checkIn, 'PPP') : 'Select date'}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={checkIn} onSelect={setCheckIn} disabled={(date) => date < new Date()} />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkIn}
+                        onSelect={setCheckIn}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          if (date < today) return true;
+                          if (!selectedRoom) return false;
+                          return isDateBlocked(date, blockedRanges);
+                        }}
+                        modifiers={{
+                          blocked: (date) => selectedRoom ? isDateBlocked(date, blockedRanges) : false,
+                        }}
+                        modifiersClassNames={{
+                          blocked: 'bg-destructive/10 text-destructive line-through opacity-50',
+                        }}
+                        initialFocus
+                      />
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -261,47 +335,63 @@ export default function HotelBookingPage() {
                         {checkOut ? format(checkOut, 'PPP') : 'Select date'}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar mode="single" selected={checkOut} onSelect={setCheckOut} disabled={(date) => !checkIn || date <= checkIn} />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={checkOut}
+                        onSelect={setCheckOut}
+                        disabled={(date) => {
+                          if (!checkIn) return true;
+                          if (date <= checkIn) return true;
+                          if (!selectedRoom) return false;
+                          return isDateBlocked(date, blockedRanges);
+                        }}
+                        modifiers={{
+                          blocked: (date) => selectedRoom ? isDateBlocked(date, blockedRanges) : false,
+                        }}
+                        modifiersClassNames={{
+                          blocked: 'bg-destructive/10 text-destructive line-through opacity-50',
+                        }}
+                        initialFocus
+                      />
                     </PopoverContent>
                   </Popover>
                 </div>
 
-                {selectedRoom && numberOfNights > 0 && (
-                  <>
-                    <div className="rounded-lg border p-4 space-y-2 bg-muted/50">
-                      <p className="font-medium">{selectedRoom.name}</p>
-                      <p className="text-sm text-muted-foreground">{numberOfNights} night{numberOfNights > 1 ? 's' : ''}</p>
-                      <p className="text-2xl font-bold text-primary">{formatCurrency(selectedRoom.pricePerNight)}/night</p>
-                    </div>
-
-                    <div className="rounded-lg border p-4 space-y-3">
-                      <p className="font-semibold text-sm">Payment</p>
-                      <Alert className="py-2">
-                        <Info className="h-4 w-4" />
-                        <AlertDescription className="text-xs">
-                          A 10% deposit is required to confirm your booking.
-                        </AlertDescription>
-                      </Alert>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Total Amount:</span>
-                          <span className="font-medium">{formatCurrency(totalPrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-primary">
-                          <span>Deposit (10%):</span>
-                          <span className="font-semibold">{formatCurrency(depositAmount)}</span>
-                        </div>
-                        <div className="flex justify-between text-muted-foreground">
-                          <span>Remaining Amount:</span>
-                          <span>{formatCurrency(remainingAmount)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </>
+                {hasDateConflict && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      Selected dates overlap with existing bookings. Please choose different dates.
+                    </AlertDescription>
+                  </Alert>
                 )}
 
-                <Button onClick={handleBooking} disabled={bookHotel.isPending || !selectedRoom || !checkIn || !checkOut || numberOfNights <= 0} className="w-full">
+                {numberOfNights > 0 && !hasDateConflict && (
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Nights:</span>
+                      <span className="font-medium">{numberOfNights}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Price per night:</span>
+                      <span className="font-medium">{formatCurrency(Number(selectedRoom?.offerPrice || 0))}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold pt-2 border-t">
+                      <span>Total:</span>
+                      <span>{formatCurrency(totalPrice)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>Deposit (10%):</span>
+                      <span>{formatCurrency(depositAmount)}</span>
+                    </div>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleBooking} 
+                  disabled={!selectedRoom || !checkIn || !checkOut || bookHotel.isPending || hasDateConflict}
+                  className="w-full"
+                >
                   {bookHotel.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -311,34 +401,8 @@ export default function HotelBookingPage() {
                     'Confirm Booking'
                   )}
                 </Button>
-
-                {!isAuthenticated && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Please sign in to complete your booking
-                  </p>
-                )}
               </CardContent>
             </Card>
-
-            {/* My Bookings */}
-            {isAuthenticated && myBookings && myBookings.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>My Bookings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {myBookings.slice(0, 3).map((booking) => (
-                    <div key={booking.bookingId} className="rounded-lg border p-3 text-sm">
-                      <p className="font-medium">{booking.roomType}</p>
-                      <p className="text-muted-foreground">{formatDate(booking.checkInDate)} - {formatDate(booking.checkOutDate)}</p>
-                      <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="mt-2">
-                        {booking.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
@@ -347,46 +411,49 @@ export default function HotelBookingPage() {
 }
 
 function RoomCard({ room, selected, onSelect }: { room: RoomType; selected: boolean; onSelect: (room: RoomType) => void }) {
-  // Get rating for this room type
   const roomRating = getRoomTypeRating(room.name);
   
   return (
-    <Card className={`cursor-pointer transition-all ${selected ? 'ring-2 ring-primary' : ''}`} onClick={() => onSelect(room)}>
-      <CardContent className="p-4">
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold">{room.name}</h3>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-medium">{roomRating}</span>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {room.features.map((feature) => (
-                <Badge key={feature} variant="secondary" className="text-xs">
-                  {feature}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-2xl font-bold text-primary">{formatCurrency(room.pricePerNight)}<span className="text-sm font-normal text-muted-foreground">/night</span></p>
+    <div
+      onClick={() => onSelect(room)}
+      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+        selected ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+      }`}
+    >
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h3 className="font-semibold">{room.name}</h3>
+          <div className="flex items-center gap-1 mt-1">
+            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+            <span className="text-sm text-muted-foreground">{roomRating}</span>
           </div>
-          {selected && (
-            <div className="flex items-center">
-              <CheckCircle2 className="h-6 w-6 text-primary" />
-            </div>
-          )}
         </div>
-      </CardContent>
-    </Card>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground line-through">
+            {formatCurrency(Number(room.pricePerNight))}/night
+          </div>
+          <div className="text-lg font-bold text-primary">
+            {formatCurrency(Number(room.offerPrice))}/night
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2 mt-3">
+        {room.features.map((feature, idx) => (
+          <Badge key={idx} variant="secondary" className="text-xs">
+            {feature}
+          </Badge>
+        ))}
+      </div>
+    </div>
   );
 }
 
 function PlaceholderRoom({ type, onSelect }: { type: string; onSelect: (room: RoomType) => void }) {
   const placeholderRoom: RoomType = {
     name: type,
-    features: ['King Bed', 'WiFi', 'AC', 'TV'],
-    pricePerNight: BigInt(5000),
+    features: ['WiFi', 'AC', 'TV'],
+    pricePerNight: 5000n,
+    offerPrice: 4500n,
     imageUrls: [],
   };
 

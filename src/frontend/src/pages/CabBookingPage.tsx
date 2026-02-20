@@ -1,22 +1,26 @@
-import { useState } from 'react';
-import { useGetCabTypes, useBookCab, useGetMyCabBookings } from '@/hooks/useQueries';
+import { useState, useMemo } from 'react';
+import { useGetCabTypes, useBookCab, useGetMyCabBookings, useGetCabAvailability, useGetCabBlockedDates } from '@/hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle2, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, CalendarIcon, CheckCircle2, Car, MapPin, Clock, Info } from 'lucide-react';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { useInternetIdentity } from '@/hooks/useInternetIdentity';
 import { dateToNanoseconds, formatCurrency, formatDateTime } from '@/utils/format';
+import { nanosToDate, normalizeToDay } from '@/utils/availability';
+import AvailabilityLegend from '@/components/availability/AvailabilityLegend';
 import type { CabType } from '../backend';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { format } from 'date-fns';
 
 export default function CabBookingPage() {
   const { identity } = useInternetIdentity();
   const { data: cabTypes, isLoading } = useGetCabTypes();
+  const { data: cabAvailability = [] } = useGetCabAvailability();
   const { data: myBookings } = useGetMyCabBookings();
   const bookCab = useBookCab();
 
@@ -26,8 +30,32 @@ export default function CabBookingPage() {
   const [pickupDate, setPickupDate] = useState<Date>();
   const [pickupTime, setPickupTime] = useState('09:00');
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bookingId, setBookingId] = useState<string>('');
+
+  // Fetch blocked dates for the selected cab type
+  const { data: blockedPickupTimes = [] } = useGetCabBlockedDates(selectedCab?.name || '');
 
   const isAuthenticated = !!identity;
+
+  const availableCount = useMemo(() => {
+    if (!selectedCab) return 0;
+    const availability = cabAvailability.find(a => a.cabType === selectedCab.name);
+    return availability ? Number(availability.availableCount) : 0;
+  }, [selectedCab, cabAvailability]);
+
+  // Convert blocked pickup times to dates for calendar
+  const blockedDates = useMemo(() => {
+    return blockedPickupTimes.map(time => normalizeToDay(nanosToDate(time)));
+  }, [blockedPickupTimes]);
+
+  // Check if selected date is blocked
+  const isSelectedDateBlocked = useMemo(() => {
+    if (!pickupDate || blockedDates.length === 0) return false;
+    const normalizedPickup = normalizeToDay(pickupDate);
+    return blockedDates.some(blocked => 
+      normalizedPickup.getTime() === blocked.getTime()
+    );
+  }, [pickupDate, blockedDates]);
 
   const handleBooking = async () => {
     if (!isAuthenticated) {
@@ -40,17 +68,28 @@ export default function CabBookingPage() {
       return;
     }
 
-    try {
-      const [hours, minutes] = pickupTime.split(':');
-      const dateTime = new Date(pickupDate);
-      dateTime.setHours(parseInt(hours), parseInt(minutes));
+    if (isSelectedDateBlocked) {
+      toast.error('Selected date is not available. Please choose a different date.');
+      return;
+    }
 
-      await bookCab.mutateAsync({
+    if (availableCount === 0) {
+      toast.error('No cabs available for the selected type');
+      return;
+    }
+
+    try {
+      const [hours, minutes] = pickupTime.split(':').map(Number);
+      const pickupDateTime = new Date(pickupDate);
+      pickupDateTime.setHours(hours, minutes, 0, 0);
+
+      const id = await bookCab.mutateAsync({
         cabType: selectedCab.name,
         pickupLocation,
         dropoffLocation,
-        pickupTime: dateToNanoseconds(dateTime),
+        pickupTime: dateToNanoseconds(pickupDateTime),
       });
+      setBookingId(id);
       setShowConfirmation(true);
       toast.success('Cab booking confirmed!');
     } catch (error) {
@@ -58,15 +97,6 @@ export default function CabBookingPage() {
       console.error(error);
     }
   };
-
-  // Generate placeholder cab types if none exist
-  const displayCabTypes = cabTypes && cabTypes.length > 0 ? cabTypes : [
-    { name: 'Sedan (4-seater)', capacity: BigInt(4), pricePerTrip: BigInt(50), imageUrl: '' },
-    { name: 'SUV (7-seater)', capacity: BigInt(7), pricePerTrip: BigInt(80), imageUrl: '' },
-    { name: 'Van (12-seater)', capacity: BigInt(12), pricePerTrip: BigInt(120), imageUrl: '' },
-    { name: 'Minibus (18-seater)', capacity: BigInt(18), pricePerTrip: BigInt(180), imageUrl: '' },
-    { name: 'Bus (22-seater)', capacity: BigInt(22), pricePerTrip: BigInt(220), imageUrl: '' },
-  ];
 
   if (isLoading) {
     return (
@@ -91,18 +121,22 @@ export default function CabBookingPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border p-4 space-y-2">
-              <p><strong>Vehicle:</strong> {selectedCab?.name}</p>
+              <p><strong>Booking Reference:</strong> {bookingId}</p>
+              <p><strong>Cab Type:</strong> {selectedCab?.name}</p>
               <p><strong>Pickup:</strong> {pickupLocation}</p>
-              <p><strong>Drop-off:</strong> {dropoffLocation}</p>
-              <p><strong>Date & Time:</strong> {pickupDate && format(pickupDate, 'PPP')} at {pickupTime}</p>
+              <p><strong>Dropoff:</strong> {dropoffLocation}</p>
+              <p><strong>Pickup Time:</strong> {pickupDate && format(pickupDate, 'PPP')} at {pickupTime}</p>
+              <p><strong>Total Price:</strong> {formatCurrency(Number(selectedCab?.offerPrice || 0))}</p>
             </div>
-            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
-              <p className="text-blue-900 dark:text-blue-100">
-                <strong>Note:</strong> Email and WhatsApp notifications are not included in this version. 
-                Please check your bookings in your account or contact support for updates.
-              </p>
-            </div>
-            <Button onClick={() => setShowConfirmation(false)} className="w-full">
+
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertDescription>
+                Your booking is confirmed. The driver will contact you before the pickup time.
+              </AlertDescription>
+            </Alert>
+
+            <Button onClick={() => { setShowConfirmation(false); setBookingId(''); }} className="w-full">
               Make Another Booking
             </Button>
           </CardContent>
@@ -112,148 +146,267 @@ export default function CabBookingPage() {
   }
 
   return (
-    <div className="container py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Cab Booking</h1>
-        <p className="text-muted-foreground">Book reliable transportation from 4 to 22 seaters</p>
+    <div className="min-h-screen">
+      {/* Header */}
+      <div 
+        className="relative py-12 px-4 bg-hero-image bg-overlay-subtle"
+        style={{
+          backgroundImage: 'url(/assets/generated/travel-bg-hero-couple.dim_1920x1080.jpg)'
+        }}
+      >
+        <div className="container max-w-7xl mx-auto content-above-overlay">
+          <h1 className="text-3xl font-bold mb-2">Cab Services</h1>
+          <p className="text-muted-foreground">Book reliable transportation for your journey</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Vehicle Selection */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Select Vehicle</CardTitle>
-              <CardDescription>Choose the right vehicle for your needs</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {displayCabTypes.map((cab) => (
-                  <Card
-                    key={cab.name}
-                    className={`cursor-pointer transition-all ${selectedCab?.name === cab.name ? 'ring-2 ring-primary' : ''}`}
-                    onClick={() => setSelectedCab(cab)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-semibold">{cab.name}</h3>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
-                            <Users className="h-4 w-4" />
-                            <span>{cab.capacity.toString()} seats</span>
-                          </div>
-                        </div>
-                        {selectedCab?.name === cab.name && <CheckCircle2 className="h-5 w-5 text-primary" />}
-                      </div>
-                      <p className="text-xl font-bold text-primary">{formatCurrency(cab.pricePerTrip)}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Booking Form */}
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Trip Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="pickup">Pickup Location</Label>
-                <Input
-                  id="pickup"
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  placeholder="Enter pickup address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="dropoff">Drop-off Location</Label>
-                <Input
-                  id="dropoff"
-                  value={dropoffLocation}
-                  onChange={(e) => setDropoffLocation(e.target.value)}
-                  placeholder="Enter drop-off address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Pickup Date</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full justify-start text-left font-normal">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {pickupDate ? format(pickupDate, 'PPP') : 'Select date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={pickupDate} onSelect={setPickupDate} disabled={(date) => date < new Date()} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="time">Pickup Time</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={pickupTime}
-                  onChange={(e) => setPickupTime(e.target.value)}
-                />
-              </div>
-
-              {selectedCab && (
-                <div className="rounded-lg border p-4 space-y-2 bg-muted/50">
-                  <p className="font-medium">{selectedCab.name}</p>
-                  <p className="text-2xl font-bold text-primary">{formatCurrency(selectedCab.pricePerTrip)}</p>
-                </div>
-              )}
-
-              <Button onClick={handleBooking} disabled={bookCab.isPending || !selectedCab} className="w-full">
-                {bookCab.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Booking...
-                  </>
-                ) : (
-                  'Confirm Booking'
-                )}
-              </Button>
-
-              {!isAuthenticated && (
-                <p className="text-sm text-muted-foreground text-center">
-                  Please sign in to complete your booking
-                </p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* My Bookings */}
-          {isAuthenticated && myBookings && myBookings.length > 0 && (
+      {/* Main Content */}
+      <div className="container py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cab Selection */}
+          <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>My Bookings</CardTitle>
+                <CardTitle>Select Vehicle Type</CardTitle>
+                <CardDescription>Choose from our available vehicles</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {myBookings.slice(0, 3).map((booking) => (
-                  <div key={booking.bookingId} className="rounded-lg border p-3 text-sm">
-                    <p className="font-medium">{booking.cabType}</p>
-                    <p className="text-muted-foreground text-xs">{booking.pickupLocation} → {booking.dropoffLocation}</p>
-                    <p className="text-muted-foreground text-xs">{formatDateTime(booking.pickupTime)}</p>
-                    <Badge variant={booking.status === 'confirmed' ? 'default' : 'secondary'} className="mt-2">
-                      {booking.status}
-                    </Badge>
-                  </div>
-                ))}
+              <CardContent>
+                <div className="grid gap-4">
+                  {cabTypes?.map((cab) => (
+                    <CabCard 
+                      key={cab.name} 
+                      cab={cab} 
+                      selected={selectedCab?.name === cab.name} 
+                      onSelect={setSelectedCab}
+                      availableCount={cabAvailability.find(a => a.cabType === cab.name)?.availableCount || 0n}
+                    />
+                  )) || <PlaceholderCab onSelect={setSelectedCab} />}
+                </div>
               </CardContent>
             </Card>
-          )}
+
+            {/* My Bookings */}
+            {isAuthenticated && myBookings && myBookings.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>My Cab Bookings</CardTitle>
+                  <CardDescription>Your booking history</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {myBookings.map((booking) => (
+                      <div key={booking.bookingId} className="p-3 border rounded-lg space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="font-medium">{booking.cabType}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {booking.pickupLocation} → {booking.dropoffLocation}
+                            </p>
+                          </div>
+                          <Badge variant={booking.status === 'confirmed' ? 'default' : booking.status === 'cancelled' ? 'destructive' : 'secondary'}>
+                            {booking.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm">Pickup: {formatDateTime(booking.pickupTime)}</p>
+                        <p className="text-sm">Total: {formatCurrency(Number(booking.totalPrice))}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Booking Form */}
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Book Your Ride</CardTitle>
+                <CardDescription>Enter trip details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {selectedCab && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="font-medium">{selectedCab.name}</p>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-sm text-muted-foreground line-through">
+                        {formatCurrency(Number(selectedCab.pricePerTrip))}
+                      </span>
+                      <span className="text-lg font-bold text-primary">
+                        {formatCurrency(Number(selectedCab.offerPrice))}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Available: {availableCount} {availableCount === 1 ? 'vehicle' : 'vehicles'}
+                    </p>
+                  </div>
+                )}
+
+                {selectedCab && <AvailabilityLegend />}
+
+                <div className="space-y-2">
+                  <Label htmlFor="pickup">Pickup Location</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="pickup"
+                      placeholder="Enter pickup location"
+                      value={pickupLocation}
+                      onChange={(e) => setPickupLocation(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dropoff">Dropoff Location</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="dropoff"
+                      placeholder="Enter dropoff location"
+                      value={dropoffLocation}
+                      onChange={(e) => setDropoffLocation(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Pickup Date</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-start text-left font-normal">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {pickupDate ? format(pickupDate, 'PPP') : 'Select date'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={pickupDate}
+                        onSelect={setPickupDate}
+                        disabled={(date) => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          if (date < today) return true;
+                          if (!selectedCab) return false;
+                          const normalizedDate = normalizeToDay(date);
+                          return blockedDates.some(blocked => 
+                            normalizedDate.getTime() === blocked.getTime()
+                          );
+                        }}
+                        modifiers={{
+                          blocked: (date) => {
+                            if (!selectedCab) return false;
+                            const normalizedDate = normalizeToDay(date);
+                            return blockedDates.some(blocked => 
+                              normalizedDate.getTime() === blocked.getTime()
+                            );
+                          },
+                        }}
+                        modifiersClassNames={{
+                          blocked: 'bg-destructive/10 text-destructive line-through opacity-50',
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="time">Pickup Time</Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="time"
+                      type="time"
+                      value={pickupTime}
+                      onChange={(e) => setPickupTime(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                {isSelectedDateBlocked && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      Selected date is not available. Please choose a different date.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {availableCount === 0 && selectedCab && (
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      No vehicles available for this cab type.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button 
+                  onClick={handleBooking} 
+                  disabled={!selectedCab || !pickupLocation || !dropoffLocation || !pickupDate || bookCab.isPending || availableCount === 0 || isSelectedDateBlocked}
+                  className="w-full"
+                >
+                  {bookCab.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Booking...
+                    </>
+                  ) : (
+                    'Confirm Booking'
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function CabCard({ cab, selected, onSelect, availableCount }: { cab: CabType; selected: boolean; onSelect: (cab: CabType) => void; availableCount: bigint }) {
+  return (
+    <div
+      onClick={() => onSelect(cab)}
+      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+        selected ? 'border-primary bg-primary/5' : 'hover:border-primary/50'
+      }`}
+    >
+      <div className="flex justify-between items-start">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-muted rounded-lg">
+            <Car className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="font-semibold">{cab.name}</h3>
+            <p className="text-sm text-muted-foreground">Capacity: {Number(cab.capacity)} passengers</p>
+            <p className="text-sm text-muted-foreground">Available: {Number(availableCount)}</p>
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-sm text-muted-foreground line-through">
+            {formatCurrency(Number(cab.pricePerTrip))}
+          </div>
+          <div className="text-lg font-bold text-primary">
+            {formatCurrency(Number(cab.offerPrice))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderCab({ onSelect }: { onSelect: (cab: CabType) => void }) {
+  const placeholderCab: CabType = {
+    name: 'Sedan',
+    capacity: 4n,
+    pricePerTrip: 2000n,
+    offerPrice: 1800n,
+    imageUrl: '',
+  };
+
+  return <CabCard cab={placeholderCab} selected={false} onSelect={onSelect} availableCount={5n} />;
 }

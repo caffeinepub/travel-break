@@ -8,6 +8,10 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const DateRange = IDL.Record({
+  'checkIn' : IDL.Int,
+  'checkOut' : IDL.Int,
+});
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -18,6 +22,7 @@ export const Product = IDL.Record({
   'name' : IDL.Text,
   'description' : IDL.Text,
   'productId' : IDL.Text,
+  'offerPrice' : IDL.Nat,
   'category' : IDL.Text,
   'price' : IDL.Nat,
 });
@@ -35,6 +40,7 @@ export const BookingStatus = IDL.Variant({
 export const ActingDriverRequest = IDL.Record({
   'status' : BookingStatus,
   'serviceDate' : IDL.Int,
+  'vehicleType' : IDL.Text,
   'requestId' : IDL.Text,
   'serviceDetails' : IDL.Text,
   'bookingDate' : IDL.Int,
@@ -104,10 +110,15 @@ export const SalesOrder = IDL.Record({
   'products' : IDL.Vec(Product),
   'totalPrice' : IDL.Nat,
 });
+export const CabAvailability = IDL.Record({
+  'availableCount' : IDL.Nat,
+  'cabType' : IDL.Text,
+});
 export const CabType = IDL.Record({
   'name' : IDL.Text,
   'pricePerTrip' : IDL.Nat,
   'imageUrl' : IDL.Text,
+  'offerPrice' : IDL.Nat,
   'capacity' : IDL.Nat,
 });
 export const UserProfile = IDL.Record({
@@ -120,10 +131,12 @@ export const RoomType = IDL.Record({
   'imageUrls' : IDL.Vec(IDL.Text),
   'pricePerNight' : IDL.Nat,
   'name' : IDL.Text,
+  'offerPrice' : IDL.Nat,
 });
 
 export const idlService = IDL.Service({
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addRoomAvailability' : IDL.Func([IDL.Text, IDL.Vec(DateRange)], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'bookCab' : IDL.Func([IDL.Text, IDL.Text, IDL.Text, IDL.Int], [IDL.Text], []),
   'bookHotel' : IDL.Func([IDL.Text, IDL.Int, IDL.Int], [IDL.Text], []),
@@ -142,7 +155,13 @@ export const idlService = IDL.Service({
   'getAllHotelBookings' : IDL.Func([], [IDL.Vec(HotelBooking)], ['query']),
   'getAllInquiries' : IDL.Func([], [IDL.Vec(Inquiry)], ['query']),
   'getAllPayments' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
+  'getAllRoomAvailability' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(DateRange)))],
+      ['query'],
+    ),
   'getAllSalesOrders' : IDL.Func([], [IDL.Vec(SalesOrder)], ['query']),
+  'getCabAvailability' : IDL.Func([], [IDL.Vec(CabAvailability)], ['query']),
   'getCabTypes' : IDL.Func([], [IDL.Vec(CabType)], ['query']),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -156,6 +175,7 @@ export const idlService = IDL.Service({
   'getMyInquiries' : IDL.Func([], [IDL.Vec(Inquiry)], ['query']),
   'getMyPayments' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
   'getMySalesOrders' : IDL.Func([], [IDL.Vec(SalesOrder)], ['query']),
+  'getRoomAvailability' : IDL.Func([IDL.Text], [IDL.Vec(DateRange)], ['query']),
   'getRoomTypes' : IDL.Func([], [IDL.Vec(RoomType)], ['query']),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
@@ -163,8 +183,13 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'requestActingDriver' : IDL.Func([IDL.Text, IDL.Int], [IDL.Text], []),
+  'requestActingDriver' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Int],
+      [IDL.Text],
+      [],
+    ),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'setCabAvailability' : IDL.Func([IDL.Text, IDL.Nat], [], []),
   'submitInquiry' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
   'submitPayment' : IDL.Func([IDL.Text, IDL.Text, IDL.Nat], [IDL.Text], []),
   'updateActingDriverRequestStatus' : IDL.Func(
@@ -205,6 +230,7 @@ export const idlService = IDL.Service({
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const DateRange = IDL.Record({ 'checkIn' : IDL.Int, 'checkOut' : IDL.Int });
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
@@ -215,6 +241,7 @@ export const idlFactory = ({ IDL }) => {
     'name' : IDL.Text,
     'description' : IDL.Text,
     'productId' : IDL.Text,
+    'offerPrice' : IDL.Nat,
     'category' : IDL.Text,
     'price' : IDL.Nat,
   });
@@ -232,6 +259,7 @@ export const idlFactory = ({ IDL }) => {
   const ActingDriverRequest = IDL.Record({
     'status' : BookingStatus,
     'serviceDate' : IDL.Int,
+    'vehicleType' : IDL.Text,
     'requestId' : IDL.Text,
     'serviceDetails' : IDL.Text,
     'bookingDate' : IDL.Int,
@@ -301,10 +329,15 @@ export const idlFactory = ({ IDL }) => {
     'products' : IDL.Vec(Product),
     'totalPrice' : IDL.Nat,
   });
+  const CabAvailability = IDL.Record({
+    'availableCount' : IDL.Nat,
+    'cabType' : IDL.Text,
+  });
   const CabType = IDL.Record({
     'name' : IDL.Text,
     'pricePerTrip' : IDL.Nat,
     'imageUrl' : IDL.Text,
+    'offerPrice' : IDL.Nat,
     'capacity' : IDL.Nat,
   });
   const UserProfile = IDL.Record({
@@ -317,10 +350,12 @@ export const idlFactory = ({ IDL }) => {
     'imageUrls' : IDL.Vec(IDL.Text),
     'pricePerNight' : IDL.Nat,
     'name' : IDL.Text,
+    'offerPrice' : IDL.Nat,
   });
   
   return IDL.Service({
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addRoomAvailability' : IDL.Func([IDL.Text, IDL.Vec(DateRange)], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'bookCab' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Int],
@@ -343,7 +378,13 @@ export const idlFactory = ({ IDL }) => {
     'getAllHotelBookings' : IDL.Func([], [IDL.Vec(HotelBooking)], ['query']),
     'getAllInquiries' : IDL.Func([], [IDL.Vec(Inquiry)], ['query']),
     'getAllPayments' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
+    'getAllRoomAvailability' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(DateRange)))],
+        ['query'],
+      ),
     'getAllSalesOrders' : IDL.Func([], [IDL.Vec(SalesOrder)], ['query']),
+    'getCabAvailability' : IDL.Func([], [IDL.Vec(CabAvailability)], ['query']),
     'getCabTypes' : IDL.Func([], [IDL.Vec(CabType)], ['query']),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -357,6 +398,11 @@ export const idlFactory = ({ IDL }) => {
     'getMyInquiries' : IDL.Func([], [IDL.Vec(Inquiry)], ['query']),
     'getMyPayments' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
     'getMySalesOrders' : IDL.Func([], [IDL.Vec(SalesOrder)], ['query']),
+    'getRoomAvailability' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(DateRange)],
+        ['query'],
+      ),
     'getRoomTypes' : IDL.Func([], [IDL.Vec(RoomType)], ['query']),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
@@ -364,8 +410,13 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'requestActingDriver' : IDL.Func([IDL.Text, IDL.Int], [IDL.Text], []),
+    'requestActingDriver' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Int],
+        [IDL.Text],
+        [],
+      ),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'setCabAvailability' : IDL.Func([IDL.Text, IDL.Nat], [], []),
     'submitInquiry' : IDL.Func([IDL.Text, IDL.Text], [IDL.Text], []),
     'submitPayment' : IDL.Func([IDL.Text, IDL.Text, IDL.Nat], [IDL.Text], []),
     'updateActingDriverRequestStatus' : IDL.Func(

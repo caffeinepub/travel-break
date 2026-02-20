@@ -7,12 +7,6 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface CabType {
-    name: string;
-    pricePerTrip: bigint;
-    imageUrl: string;
-    capacity: bigint;
-}
 export interface CabBooking {
     status: BookingStatus;
     bookingId: string;
@@ -61,11 +55,36 @@ export interface SalesOrder {
     products: Array<Product>;
     totalPrice: bigint;
 }
+export interface CabAvailability {
+    availableCount: bigint;
+    cabType: string;
+}
 export interface RoomType {
     features: Array<string>;
     imageUrls: Array<string>;
     pricePerNight: bigint;
     name: string;
+    offerPrice: bigint;
+}
+export interface CabType {
+    name: string;
+    pricePerTrip: bigint;
+    imageUrl: string;
+    offerPrice: bigint;
+    capacity: bigint;
+}
+export interface DateRange {
+    checkIn: bigint;
+    checkOut: bigint;
+}
+export interface ActingDriverRequest {
+    status: BookingStatus;
+    serviceDate: bigint;
+    vehicleType: string;
+    requestId: string;
+    serviceDetails: string;
+    bookingDate: bigint;
+    guest: Principal;
 }
 export interface Inquiry {
     status: Variant_new_closed_reviewed;
@@ -75,19 +94,12 @@ export interface Inquiry {
     timestamp: bigint;
     inquiryId: string;
 }
-export interface ActingDriverRequest {
-    status: BookingStatus;
-    serviceDate: bigint;
-    requestId: string;
-    serviceDetails: string;
-    bookingDate: bigint;
-    guest: Principal;
-}
 export interface Product {
     imageUrls: Array<string>;
     name: string;
     description: string;
     productId: string;
+    offerPrice: bigint;
     category: string;
     price: bigint;
 }
@@ -123,6 +135,7 @@ export enum Variant_new_verified_rejected {
     rejected = "rejected"
 }
 export interface backendInterface {
+    addRoomAvailability(roomType: string, dateRanges: Array<DateRange>): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     bookCab(cabType: string, pickupLocation: string, dropoffLocation: string, pickupTime: bigint): Promise<string>;
     bookHotel(roomType: string, checkInDate: bigint, checkOutDate: bigint): Promise<string>;
@@ -133,7 +146,9 @@ export interface backendInterface {
     getAllHotelBookings(): Promise<Array<HotelBooking>>;
     getAllInquiries(): Promise<Array<Inquiry>>;
     getAllPayments(): Promise<Array<PaymentRecord>>;
+    getAllRoomAvailability(): Promise<Array<[string, Array<DateRange>]>>;
     getAllSalesOrders(): Promise<Array<SalesOrder>>;
+    getCabAvailability(): Promise<Array<CabAvailability>>;
     getCabTypes(): Promise<Array<CabType>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
@@ -143,11 +158,13 @@ export interface backendInterface {
     getMyInquiries(): Promise<Array<Inquiry>>;
     getMyPayments(): Promise<Array<PaymentRecord>>;
     getMySalesOrders(): Promise<Array<SalesOrder>>;
+    getRoomAvailability(roomType: string): Promise<Array<DateRange>>;
     getRoomTypes(): Promise<Array<RoomType>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
-    requestActingDriver(serviceDetails: string, serviceDate: bigint): Promise<string>;
+    requestActingDriver(vehicleType: string, serviceDetails: string, serviceDate: bigint): Promise<string>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
+    setCabAvailability(cabType: string, availableCount: bigint): Promise<void>;
     submitInquiry(message: string, contactInfo: string): Promise<string>;
     submitPayment(reference: string, note: string, amount: bigint): Promise<string>;
     updateActingDriverRequestStatus(requestId: string, status: BookingStatus): Promise<void>;

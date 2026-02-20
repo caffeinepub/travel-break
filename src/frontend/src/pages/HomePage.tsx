@@ -10,7 +10,7 @@ export default function HomePage() {
       description: 'Book comfortable rooms, cottages, and stays with our easy booking system',
       icon: Hotel,
       to: '/hotel',
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-sky-500 to-blue-600',
     },
     {
       title: 'Cab Booking',
@@ -24,7 +24,7 @@ export default function HomePage() {
       description: 'Professional acting driver services for your convenience',
       icon: UserCircle,
       to: '/driver',
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-cyan-500 to-blue-600',
     },
     {
       title: 'Store',
@@ -45,7 +45,7 @@ export default function HomePage() {
         }}
       >
         <div className="container max-w-6xl mx-auto text-center content-above-overlay">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-purple-600 to-orange-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-sky-500 via-blue-500 to-cyan-500 bg-clip-text text-transparent">
             Welcome to Travel Break
           </h1>
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">

@@ -1,35 +1,56 @@
 {
   "kind": "build_request",
-  "title": "Reorder navigation so Order History appears below My Account",
+  "title": "Hide admin dashboard link and enable access only via /admin URL",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-39",
-      "text": "Update the navigation/menu ordering so the \"Order History\" button appears below the \"My Account\" button (i.e., directly after it) wherever both items are shown together (especially in the mobile slide-out menu). Keep all user-facing text in English.",
+      "id": "REQ-1",
+      "text": "Remove the admin dashboard navigation link from the HeaderNav component so it does not appear in the main navigation menu for any users",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-last"
         ],
         "quotes": [
-          "move the order history  button below My Account button"
+          "don't show in login"
         ]
       },
       "acceptanceCriteria": [
-        "In the mobile slide-out menu in `frontend/src/components/layout/HeaderNav.tsx`, the \"Order History\" button is listed below the \"My Account\" button (and not above it).",
-        "No existing routes or navigation behaviors change (\"Order History\" still navigates to `/order-history`; \"My Account\" still opens the account/auth modal).",
-        "User-facing labels remain in English (e.g., \"My Account\", \"Order History\")."
+        "The admin dashboard link is not visible in the HeaderNav component",
+        "Users cannot see or click an admin link from the main navigation",
+        "Admin functionality remains accessible through direct URL navigation"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Ensure the admin dashboard remains fully accessible when users navigate directly to the /admin URL path in their browser address bar",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-last"
+        ],
+        "quotes": [
+          "dash board access should be there when used /admin in website address"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Navigating to /admin in the browser address bar loads the admin dashboard",
+        "The OwnerGuard authorization check still applies at the /admin route",
+        "Unauthorized users see the AccessDeniedScreen when accessing /admin",
+        "Authorized admins can access and use all admin dashboard functionality via /admin"
       ]
     }
   ],
   "constraints": [
-    "Do not modify any files under the immutable frontend paths (e.g., `frontend/src/components/ui/*`, `frontend/src/hooks/useInternetIdentity.ts(x)`, `frontend/src/hooks/useActor.ts`, `frontend/src/main.tsx`).",
-    "Keep the backend single-actor architecture; no backend changes are required for this UI-only reordering."
+    "Do not modify the OwnerGuard authorization logic",
+    "Do not change the /admin route path",
+    "Preserve all existing admin dashboard functionality"
   ],
   "nonGoals": [
-    "Do not change authentication logic or available sign-in methods.",
-    "Do not add new routes or new navigation destinations.",
-    "Do not redesign the header layout beyond the requested ordering change."
+    "Changing the admin authorization system",
+    "Modifying how users are granted admin access",
+    "Adding new admin features or capabilities",
+    "Changing the AccessDeniedScreen behavior"
   ],
   "imageRequirements": {
     "required": [],

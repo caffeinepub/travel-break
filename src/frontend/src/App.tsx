@@ -69,9 +69,9 @@ const paymentRoute = createRoute({
   component: PaymentReceivingPage,
 });
 
-const ownerDashboardRoute = createRoute({
+const adminDashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: '/owner-dashboard',
+  path: '/admin',
   component: OwnerDashboardPage,
 });
 
@@ -90,7 +90,7 @@ const routeTree = rootRoute.addChildren([
   storeRoute,
   customerCareRoute,
   paymentRoute,
-  ownerDashboardRoute,
+  adminDashboardRoute,
   orderHistoryRoute,
 ]);
 
@@ -104,7 +104,7 @@ declare module '@tanstack/react-router' {
 
 export default function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
       <RouterProvider router={router} />
       <Toaster />
     </ThemeProvider>

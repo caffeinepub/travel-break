@@ -1,21 +1,38 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Reorder navigation so Order History appears below My Account",
+  "title": "Hide admin dashboard link and enable access only via /admin URL",
   "requirements": [
     {
-      "id": "REQ-39",
-      "summary": "Reorder header navigation so \"Order History\" appears directly after \"My Account\" wherever both are shown together (especially the mobile slide-out menu), without changing routes or labels.",
+      "id": "REQ-1",
+      "summary": "Remove the admin dashboard navigation link from the HeaderNav component so it is not visible in the main navigation menu",
       "acceptanceCriteria": [
-        "In the mobile slide-out menu in `frontend/src/components/layout/HeaderNav.tsx`, the \"Order History\" button is listed below the \"My Account\" button (and not above it).",
-        "No existing routes or navigation behaviors change (\"Order History\" still navigates to `/order-history`; \"My Account\" still opens the account/auth modal).",
-        "User-facing labels remain in English (e.g., \"My Account\", \"Order History\")."
+        "The admin dashboard link is not visible in the HeaderNav component",
+        "Users cannot see or click an admin link from the main navigation",
+        "Admin functionality remains accessible through direct URL navigation"
       ],
       "file_operations": [
         {
           "path": "frontend/src/components/layout/HeaderNav.tsx",
           "operation": "modify",
-          "description": "Adjust the menu item rendering order so the \"Order History\" action is positioned immediately after the \"My Account\" action in the mobile slide-out menu (and any other UI where both appear together), keeping labels in English and preserving existing navigation targets/handlers."
+          "description": "Remove the admin dashboard link from the navigation menu. The link should be removed from both the desktop navigation links array and the mobile menu items array. Keep all other navigation links (hotel, cab, driver, store) intact. Do not modify the authentication controls or any other parts of the header."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Ensure the admin dashboard remains fully accessible when users navigate directly to the /admin URL path",
+      "acceptanceCriteria": [
+        "Navigating to /admin in the browser address bar loads the admin dashboard",
+        "The OwnerGuard authorization check still applies at the /admin route",
+        "Unauthorized users see the AccessDeniedScreen when accessing /admin",
+        "Authorized admins can access and use all admin dashboard functionality via /admin"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Verify that the /admin route is properly configured with the OwnerGuard wrapper and OwnerDashboardPage component. Ensure the route registration allows direct browser navigation to /admin. No changes should be needed if the route is already properly configured with OwnerGuard protection."
         }
       ]
     }

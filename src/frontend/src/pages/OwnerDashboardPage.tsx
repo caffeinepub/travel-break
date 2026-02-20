@@ -13,9 +13,20 @@ import {
   useGetAllSalesOrders,
   useGetAllInquiries,
   useGetAllPayments,
+  useUpdateHotelBookingStatus,
+  useUpdateCabBookingStatus,
+  useUpdateActingDriverRequestStatus,
+  useUpdateSalesOrderStatus,
+  useUpdateInquiryStatus,
+  useUpdatePaymentStatus,
 } from '@/hooks/useOwnerRecords';
 import { formatDate, formatDateTime, formatCurrency } from '@/utils/format';
-import { Variant_new_closed_reviewed, Variant_new_verified_rejected } from '../backend';
+import { BookingStatus, Variant_new_closed_reviewed, Variant_new_verified_rejected } from '../backend';
+import { toast } from 'sonner';
+import AdminKpiCards from '@/components/admin/AdminKpiCards';
+import RecentActivityFeed from '@/components/admin/RecentActivityFeed';
+import StatusSelect from '@/components/admin/StatusSelect';
+import AdminManagementSection from '@/components/admin/AdminManagementSection';
 
 export default function OwnerDashboardPage() {
   return (
@@ -33,255 +44,599 @@ function DashboardContent() {
   const { data: inquiries = [] } = useGetAllInquiries();
   const { data: payments = [] } = useGetAllPayments();
 
+  const updateHotelStatus = useUpdateHotelBookingStatus();
+  const updateCabStatus = useUpdateCabBookingStatus();
+  const updateDriverStatus = useUpdateActingDriverRequestStatus();
+  const updateOrderStatus = useUpdateSalesOrderStatus();
+  const updateInquiryStatus = useUpdateInquiryStatus();
+  const updatePaymentStatus = useUpdatePaymentStatus();
+
   const [selectedTab, setSelectedTab] = useState('overview');
 
   const stats = [
-    { label: 'Hotel Bookings', value: hotelBookings.length, icon: Hotel, color: 'text-blue-500' },
+    { label: 'Hotel Bookings', value: hotelBookings.length, icon: Hotel, color: 'text-sky-500' },
     { label: 'Cab Bookings', value: cabBookings.length, icon: Car, color: 'text-green-500' },
-    { label: 'Driver Requests', value: driverRequests.length, icon: UserCircle, color: 'text-purple-500' },
+    { label: 'Driver Requests', value: driverRequests.length, icon: UserCircle, color: 'text-cyan-500' },
     { label: 'Sales Orders', value: salesOrders.length, icon: ShoppingBag, color: 'text-orange-500' },
     { label: 'Inquiries', value: inquiries.length, icon: MessageSquare, color: 'text-red-500' },
-    { label: 'Payments', value: payments.length, icon: CreditCard, color: 'text-indigo-500' },
+    { label: 'Payments', value: payments.length, icon: CreditCard, color: 'text-blue-500' },
   ];
 
-  // Create a unified activity feed with proper type handling
-  const recentActivity = [
-    ...hotelBookings.map(b => ({ type: 'hotel' as const, data: b, timestamp: b.bookingDate })),
-    ...cabBookings.map(b => ({ type: 'cab' as const, data: b, timestamp: b.bookingDate })),
-    ...salesOrders.map(o => ({ type: 'order' as const, data: o, timestamp: o.orderDate })),
+  // Create a unified activity feed sorted by timestamp descending
+  const recentActivities = [
+    ...hotelBookings.map((b) => ({
+      type: 'hotel' as const,
+      id: b.bookingId,
+      timestamp: Number(b.bookingDate),
+      timestampBigInt: b.bookingDate,
+      status: b.status,
+      data: b,
+    })),
+    ...cabBookings.map((b) => ({
+      type: 'cab' as const,
+      id: b.bookingId,
+      timestamp: Number(b.bookingDate),
+      timestampBigInt: b.bookingDate,
+      status: b.status,
+      data: b,
+    })),
+    ...driverRequests.map((r) => ({
+      type: 'driver' as const,
+      id: r.requestId,
+      timestamp: Number(r.bookingDate),
+      timestampBigInt: r.bookingDate,
+      status: r.status,
+      data: r,
+    })),
+    ...salesOrders.map((o) => ({
+      type: 'order' as const,
+      id: o.orderId,
+      timestamp: Number(o.orderDate),
+      timestampBigInt: o.orderDate,
+      status: o.status,
+      data: o,
+    })),
+    ...inquiries.map((i) => ({
+      type: 'inquiry' as const,
+      id: i.inquiryId,
+      timestamp: Number(i.timestamp),
+      timestampBigInt: i.timestamp,
+      status: i.status,
+      data: i,
+    })),
+    ...payments.map((p) => ({
+      type: 'payment' as const,
+      id: p.paymentId,
+      timestamp: Number(p.timestamp),
+      timestampBigInt: p.timestamp,
+      status: p.status,
+      data: p,
+    })),
   ]
-    .sort((a, b) => Number(b.timestamp) - Number(a.timestamp))
-    .slice(0, 10);
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .slice(0, 15);
+
+  const handleHotelStatusChange = async (bookingId: string, status: string, roomType: string) => {
+    try {
+      await updateHotelStatus.mutateAsync({ bookingId, status: status as BookingStatus, roomType });
+      toast.success('Hotel booking status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update hotel booking status');
+      console.error(error);
+    }
+  };
+
+  const handleCabStatusChange = async (bookingId: string, status: string, cabType: string) => {
+    try {
+      await updateCabStatus.mutateAsync({ bookingId, status: status as BookingStatus, cabType });
+      toast.success('Cab booking status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update cab booking status');
+      console.error(error);
+    }
+  };
+
+  const handleDriverStatusChange = async (requestId: string, status: string) => {
+    try {
+      await updateDriverStatus.mutateAsync({ requestId, status: status as BookingStatus });
+      toast.success('Driver request status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update driver request status');
+      console.error(error);
+    }
+  };
+
+  const handleOrderStatusChange = async (orderId: string, status: string) => {
+    try {
+      await updateOrderStatus.mutateAsync({ orderId, status: status as BookingStatus });
+      toast.success('Sales order status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update sales order status');
+      console.error(error);
+    }
+  };
+
+  const handleInquiryStatusChange = async (inquiryId: string, status: string) => {
+    try {
+      await updateInquiryStatus.mutateAsync({ inquiryId, status: status as Variant_new_closed_reviewed });
+      toast.success('Inquiry status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update inquiry status');
+      console.error(error);
+    }
+  };
+
+  const handlePaymentStatusChange = async (paymentId: string, status: string) => {
+    try {
+      await updatePaymentStatus.mutateAsync({ paymentId, status: status as Variant_new_verified_rejected });
+      toast.success('Payment status updated successfully');
+    } catch (error) {
+      toast.error('Failed to update payment status');
+      console.error(error);
+    }
+  };
+
+  const getInquiryStatusLabel = (status: Variant_new_closed_reviewed): string => {
+    if (status === Variant_new_closed_reviewed.new_) return 'New';
+    if (status === Variant_new_closed_reviewed.reviewed) return 'Reviewed';
+    if (status === Variant_new_closed_reviewed.closed) return 'Closed';
+    return status;
+  };
+
+  const getPaymentStatusLabel = (status: Variant_new_verified_rejected): string => {
+    if (status === Variant_new_verified_rejected.new_) return 'New';
+    if (status === Variant_new_verified_rejected.verified) return 'Verified';
+    if (status === Variant_new_verified_rejected.rejected) return 'Rejected';
+    return status;
+  };
 
   return (
-    <div className="container py-8 max-w-7xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Owner Dashboard</h1>
-        <p className="text-muted-foreground">Manage all bookings, orders, and inquiries</p>
+    <div className="container py-8 space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight">Admin Operations Dashboard</h1>
+        <p className="text-lg text-muted-foreground">
+          Manage all bookings, orders, inquiries, and payments from one central location
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                  <p className="text-3xl font-bold mt-1">{stat.value}</p>
+      {/* KPI Cards */}
+      <AdminKpiCards stats={stats} />
+
+      {/* Tabs for different sections */}
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-8 h-auto">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm">
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="hotels" className="text-xs sm:text-sm">
+            Hotels
+          </TabsTrigger>
+          <TabsTrigger value="cabs" className="text-xs sm:text-sm">
+            Cabs
+          </TabsTrigger>
+          <TabsTrigger value="drivers" className="text-xs sm:text-sm">
+            Drivers
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="text-xs sm:text-sm">
+            Orders
+          </TabsTrigger>
+          <TabsTrigger value="inquiries" className="text-xs sm:text-sm">
+            Inquiries
+          </TabsTrigger>
+          <TabsTrigger value="payments" className="text-xs sm:text-sm">
+            Payments
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="text-xs sm:text-sm">
+            Admins
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <RecentActivityFeed activities={recentActivities} />
+        </TabsContent>
+
+        {/* Hotel Bookings Tab */}
+        <TabsContent value="hotels">
+          <Card>
+            <CardHeader>
+              <CardTitle>Hotel Bookings</CardTitle>
+              <CardDescription>Manage all hotel room bookings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {hotelBookings.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No hotel bookings yet</p>
+                  ) : (
+                    hotelBookings.map((booking) => (
+                      <Card key={booking.bookingId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{booking.roomType}</CardTitle>
+                              <CardDescription className="font-mono text-xs">
+                                {booking.bookingId}
+                              </CardDescription>
+                            </div>
+                            <StatusSelect
+                              value={booking.status}
+                              options={[
+                                { value: BookingStatus.pending, label: 'Pending' },
+                                { value: BookingStatus.confirmed, label: 'Confirmed' },
+                                { value: BookingStatus.cancelled, label: 'Cancelled' },
+                              ]}
+                              onValueChange={(status) =>
+                                handleHotelStatusChange(booking.bookingId, status, booking.roomType)
+                              }
+                              disabled={updateHotelStatus.isPending}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-muted-foreground">Check-in:</span>{' '}
+                              <span className="font-medium">{formatDate(booking.checkInDate)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Check-out:</span>{' '}
+                              <span className="font-medium">{formatDate(booking.checkOutDate)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Total Price:</span>{' '}
+                              <span className="font-medium">{formatCurrency(Number(booking.totalPrice))}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Booked:</span>{' '}
+                              <span className="font-medium">{formatDateTime(booking.bookingDate)}</span>
+                            </div>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Guest: {booking.guest.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
-                <div className={`w-12 h-12 rounded-lg bg-muted flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="h-6 w-6" />
-                </div>
-              </div>
+              </ScrollArea>
             </CardContent>
           </Card>
-        ))}
-      </div>
+        </TabsContent>
 
-      <Card>
-        <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-          <CardHeader>
-            <TabsList className="grid w-full grid-cols-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="hotels">Hotels</TabsTrigger>
-              <TabsTrigger value="cabs">Cabs</TabsTrigger>
-              <TabsTrigger value="drivers">Drivers</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-              <TabsTrigger value="support">Support</TabsTrigger>
-            </TabsList>
-          </CardHeader>
-
-          <CardContent>
-            <TabsContent value="overview" className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                <ScrollArea className="h-[500px]">
-                  <div className="space-y-3">
-                    {recentActivity.map((item, i) => (
-                      <div key={i} className="rounded-lg border p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="font-medium">
-                              {item.type === 'hotel' 
-                                ? `Hotel: ${item.data.roomType}` 
-                                : item.type === 'cab' 
-                                ? `Cab: ${item.data.cabType}` 
-                                : `Order: ${item.data.orderId}`}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {formatDateTime(item.timestamp)}
-                            </p>
-                          </div>
-                          <Badge>{item.data.status}</Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="hotels">
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {hotelBookings.map((booking) => (
-                    <div key={booking.bookingId} className="rounded-lg border p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">{booking.roomType}</p>
-                          <p className="text-sm text-muted-foreground">ID: {booking.bookingId}</p>
-                        </div>
-                        <Badge>{booking.status}</Badge>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Check-in</p>
-                          <p>{formatDate(booking.checkInDate)}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Check-out</p>
-                          <p>{formatDate(booking.checkOutDate)}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Total</p>
-                          <p className="font-bold">{formatCurrency(booking.totalPrice)}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Booked</p>
-                          <p>{formatDate(booking.bookingDate)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="cabs">
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {cabBookings.map((booking) => (
-                    <div key={booking.bookingId} className="rounded-lg border p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">{booking.cabType}</p>
-                          <p className="text-sm text-muted-foreground">ID: {booking.bookingId}</p>
-                        </div>
-                        <Badge>{booking.status}</Badge>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="space-y-1 text-sm">
-                        <p><strong>Pickup:</strong> {booking.pickupLocation}</p>
-                        <p><strong>Drop-off:</strong> {booking.dropoffLocation}</p>
-                        <p><strong>Time:</strong> {formatDateTime(booking.pickupTime)}</p>
-                        <p><strong>Total:</strong> <span className="font-bold">{formatCurrency(booking.totalPrice)}</span></p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="drivers">
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {driverRequests.map((request) => (
-                    <div key={request.requestId} className="rounded-lg border p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">Acting Driver Request</p>
-                          <p className="text-sm text-muted-foreground">ID: {request.requestId}</p>
-                        </div>
-                        <Badge>{request.status}</Badge>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="space-y-1 text-sm">
-                        <p><strong>Service Date:</strong> {formatDateTime(request.serviceDate)}</p>
-                        <p><strong>Details:</strong> {request.serviceDetails}</p>
-                        <p><strong>Requested:</strong> {formatDate(request.bookingDate)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="orders">
-              <ScrollArea className="h-[500px]">
-                <div className="space-y-3">
-                  {salesOrders.map((order) => (
-                    <div key={order.orderId} className="rounded-lg border p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="font-medium">Order #{order.orderId}</p>
-                          <p className="text-sm text-muted-foreground">{order.products.length} items</p>
-                        </div>
-                        <Badge>{order.status}</Badge>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="space-y-1 text-sm">
-                        <p><strong>Customer:</strong> {order.email}</p>
-                        <p><strong>Contact:</strong> {order.contactNumber}</p>
-                        <p><strong>Address:</strong> {order.deliveryAddress}</p>
-                        <p><strong>Total:</strong> <span className="font-bold">{formatCurrency(order.totalPrice)}</span></p>
-                        <p><strong>Ordered:</strong> {formatDate(order.orderDate)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="support">
-              <ScrollArea className="h-[500px]">
+        {/* Cab Bookings Tab */}
+        <TabsContent value="cabs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cab Bookings</CardTitle>
+              <CardDescription>Manage all cab service bookings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
                 <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold mb-3">Customer Inquiries</h3>
-                    <div className="space-y-3">
-                      {inquiries.map((inquiry) => (
-                        <div key={inquiry.inquiryId} className="rounded-lg border p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <p className="text-sm text-muted-foreground">{formatDateTime(inquiry.timestamp)}</p>
-                            <Badge variant={inquiry.status === Variant_new_closed_reviewed.new_ ? 'default' : 'secondary'}>
-                              {inquiry.status === Variant_new_closed_reviewed.new_ ? 'New' : inquiry.status}
-                            </Badge>
-                          </div>
-                          <p className="text-sm mb-2">{inquiry.message}</p>
-                          <p className="text-xs text-muted-foreground">Contact: {inquiry.contactInfo}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <h3 className="font-semibold mb-3">Payment Records</h3>
-                    <div className="space-y-3">
-                      {payments.map((payment) => (
-                        <div key={payment.paymentId} className="rounded-lg border p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="font-medium">{payment.reference}</p>
-                              <p className="text-sm text-muted-foreground">{formatDateTime(payment.timestamp)}</p>
+                  {cabBookings.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No cab bookings yet</p>
+                  ) : (
+                    cabBookings.map((booking) => (
+                      <Card key={booking.bookingId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{booking.cabType}</CardTitle>
+                              <CardDescription className="font-mono text-xs">
+                                {booking.bookingId}
+                              </CardDescription>
                             </div>
-                            <Badge variant={payment.status === Variant_new_verified_rejected.verified ? 'default' : payment.status === Variant_new_verified_rejected.rejected ? 'destructive' : 'secondary'}>
-                              {payment.status === Variant_new_verified_rejected.new_ ? 'Pending' : payment.status}
-                            </Badge>
+                            <StatusSelect
+                              value={booking.status}
+                              options={[
+                                { value: BookingStatus.pending, label: 'Pending' },
+                                { value: BookingStatus.confirmed, label: 'Confirmed' },
+                                { value: BookingStatus.cancelled, label: 'Cancelled' },
+                              ]}
+                              onValueChange={(status) =>
+                                handleCabStatusChange(booking.bookingId, status, booking.cabType)
+                              }
+                              disabled={updateCabStatus.isPending}
+                            />
                           </div>
-                          <p className="text-lg font-bold text-primary">{formatCurrency(Number(payment.amount) / 100)}</p>
-                          {payment.note && <p className="text-sm text-muted-foreground mt-1">{payment.note}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-muted-foreground">Pickup:</span>{' '}
+                              <span className="font-medium">{booking.pickupLocation}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Dropoff:</span>{' '}
+                              <span className="font-medium">{booking.dropoffLocation}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Pickup Time:</span>{' '}
+                              <span className="font-medium">{formatDateTime(booking.pickupTime)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Total Price:</span>{' '}
+                              <span className="font-medium">{formatCurrency(Number(booking.totalPrice))}</span>
+                            </div>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Guest: {booking.guest.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
-            </TabsContent>
-          </CardContent>
-        </Tabs>
-      </Card>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Driver Requests Tab */}
+        <TabsContent value="drivers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Acting Driver Requests</CardTitle>
+              <CardDescription>Manage all acting driver service requests</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {driverRequests.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No driver requests yet</p>
+                  ) : (
+                    driverRequests.map((request) => (
+                      <Card key={request.requestId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{request.vehicleType}</CardTitle>
+                              <CardDescription className="font-mono text-xs">
+                                {request.requestId}
+                              </CardDescription>
+                            </div>
+                            <StatusSelect
+                              value={request.status}
+                              options={[
+                                { value: BookingStatus.pending, label: 'Pending' },
+                                { value: BookingStatus.confirmed, label: 'Confirmed' },
+                                { value: BookingStatus.cancelled, label: 'Cancelled' },
+                              ]}
+                              onValueChange={(status) => handleDriverStatusChange(request.requestId, status)}
+                              disabled={updateDriverStatus.isPending}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Service Date:</span>{' '}
+                            <span className="font-medium">{formatDate(request.serviceDate)}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Details:</span>{' '}
+                            <p className="mt-1 text-foreground">{request.serviceDetails}</p>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Guest: {request.guest.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Sales Orders Tab */}
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sales Orders</CardTitle>
+              <CardDescription>Manage all product sales orders</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {salesOrders.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No sales orders yet</p>
+                  ) : (
+                    salesOrders.map((order) => (
+                      <Card key={order.orderId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">
+                                Order ({order.products.length} item{order.products.length !== 1 ? 's' : ''})
+                              </CardTitle>
+                              <CardDescription className="font-mono text-xs">{order.orderId}</CardDescription>
+                            </div>
+                            <StatusSelect
+                              value={order.status}
+                              options={[
+                                { value: BookingStatus.pending, label: 'Pending' },
+                                { value: BookingStatus.confirmed, label: 'Confirmed' },
+                                { value: BookingStatus.cancelled, label: 'Cancelled' },
+                              ]}
+                              onValueChange={(status) => handleOrderStatusChange(order.orderId, status)}
+                              disabled={updateOrderStatus.isPending}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <span className="text-muted-foreground">Total:</span>{' '}
+                              <span className="font-medium">{formatCurrency(Number(order.totalPrice))}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Order Date:</span>{' '}
+                              <span className="font-medium">{formatDateTime(order.orderDate)}</span>
+                            </div>
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Delivery:</span>{' '}
+                              <span className="font-medium">{order.deliveryAddress}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Contact:</span>{' '}
+                              <span className="font-medium">{order.contactNumber}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Email:</span>{' '}
+                              <span className="font-medium">{order.email}</span>
+                            </div>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Customer: {order.customer.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Inquiries Tab */}
+        <TabsContent value="inquiries">
+          <Card>
+            <CardHeader>
+              <CardTitle>Customer Inquiries</CardTitle>
+              <CardDescription>Manage all customer support inquiries</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {inquiries.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No inquiries yet</p>
+                  ) : (
+                    inquiries.map((inquiry) => (
+                      <Card key={inquiry.inquiryId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">Inquiry</CardTitle>
+                              <CardDescription className="font-mono text-xs">
+                                {inquiry.inquiryId}
+                              </CardDescription>
+                            </div>
+                            <StatusSelect
+                              value={inquiry.status}
+                              options={[
+                                { value: Variant_new_closed_reviewed.new_, label: 'New' },
+                                { value: Variant_new_closed_reviewed.reviewed, label: 'Reviewed' },
+                                { value: Variant_new_closed_reviewed.closed, label: 'Closed' },
+                              ]}
+                              onValueChange={(status) => handleInquiryStatusChange(inquiry.inquiryId, status)}
+                              disabled={updateInquiryStatus.isPending}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Message:</span>
+                            <p className="mt-1 text-foreground">{inquiry.message}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Contact Info:</span>{' '}
+                            <span className="font-medium">{inquiry.contactInfo}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Submitted:</span>{' '}
+                            <span className="font-medium">{formatDateTime(inquiry.timestamp)}</span>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Customer: {inquiry.customer.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Payments Tab */}
+        <TabsContent value="payments">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Records</CardTitle>
+              <CardDescription>Manage all payment submissions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[600px] pr-4">
+                <div className="space-y-4">
+                  {payments.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">No payment records yet</p>
+                  ) : (
+                    payments.map((payment) => (
+                      <Card key={payment.paymentId}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">
+                                {formatCurrency(Number(payment.amount))}
+                              </CardTitle>
+                              <CardDescription className="font-mono text-xs">
+                                {payment.paymentId}
+                              </CardDescription>
+                            </div>
+                            <StatusSelect
+                              value={payment.status}
+                              options={[
+                                { value: Variant_new_verified_rejected.new_, label: 'New' },
+                                { value: Variant_new_verified_rejected.verified, label: 'Verified' },
+                                { value: Variant_new_verified_rejected.rejected, label: 'Rejected' },
+                              ]}
+                              onValueChange={(status) => handlePaymentStatusChange(payment.paymentId, status)}
+                              disabled={updatePaymentStatus.isPending}
+                            />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2 text-sm">
+                          <div>
+                            <span className="text-muted-foreground">Reference:</span>{' '}
+                            <span className="font-medium">{payment.reference}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Note:</span>
+                            <p className="mt-1 text-foreground">{payment.note}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Submitted:</span>{' '}
+                            <span className="font-medium">{formatDateTime(payment.timestamp)}</span>
+                          </div>
+                          <Separator />
+                          <div className="text-xs text-muted-foreground font-mono break-all">
+                            Customer: {payment.customer.toString()}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Admin Management Tab */}
+        <TabsContent value="admins">
+          <AdminManagementSection />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

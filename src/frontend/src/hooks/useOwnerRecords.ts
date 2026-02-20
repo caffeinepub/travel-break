@@ -1,7 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useActor } from './useActor';
-import type { HotelBooking, CabBooking, ActingDriverRequest, SalesOrder, Inquiry, PaymentRecord } from '../backend';
+import { Principal } from '@dfinity/principal';
+import type {
+  HotelBooking,
+  CabBooking,
+  ActingDriverRequest,
+  SalesOrder,
+  Inquiry,
+  PaymentRecord,
+  BookingStatus,
+  Variant_new_closed_reviewed,
+  Variant_new_verified_rejected,
+} from '../backend';
+import { UserRole } from '../backend';
 
+// Query hooks for fetching all records (admin only)
 export function useGetAllHotelBookings() {
   const { actor, isFetching } = useActor();
 
@@ -77,5 +90,125 @@ export function useGetAllPayments() {
       return actor.getAllPayments();
     },
     enabled: !!actor && !isFetching,
+  });
+}
+
+// Admin management hooks
+export function useAddAdmin() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (principalId: string) => {
+      if (!actor) throw new Error('Actor not available');
+      const principal = Principal.fromText(principalId);
+      await actor.assignCallerUserRole(principal, UserRole.admin);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminList'] });
+    },
+  });
+}
+
+// Mutation hooks for updating statuses (admin only)
+export function useUpdateHotelBookingStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ bookingId, status, roomType }: { bookingId: string; status: BookingStatus; roomType: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateHotelBookingStatus(bookingId, status);
+      return { roomType };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['allHotelBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['myHotelBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['roomAvailability', data.roomType] });
+      queryClient.invalidateQueries({ queryKey: ['allRoomAvailability'] });
+    },
+  });
+}
+
+export function useUpdateCabBookingStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ bookingId, status, cabType }: { bookingId: string; status: BookingStatus; cabType: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateCabBookingStatus(bookingId, status);
+      return { cabType };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['allCabBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['myCabBookings'] });
+      queryClient.invalidateQueries({ queryKey: ['cabBlockedDates', data.cabType] });
+    },
+  });
+}
+
+export function useUpdateActingDriverRequestStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: BookingStatus }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateActingDriverRequestStatus(requestId, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allActingDriverRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['myActingDriverRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['actingDriverBlockedDates'] });
+    },
+  });
+}
+
+export function useUpdateSalesOrderStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: BookingStatus }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateSalesOrderStatus(orderId, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allSalesOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['mySalesOrders'] });
+    },
+  });
+}
+
+export function useUpdateInquiryStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ inquiryId, status }: { inquiryId: string; status: Variant_new_closed_reviewed }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updateInquiryStatus(inquiryId, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allInquiries'] });
+      queryClient.invalidateQueries({ queryKey: ['myInquiries'] });
+    },
+  });
+}
+
+export function useUpdatePaymentStatus() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ paymentId, status }: { paymentId: string; status: Variant_new_verified_rejected }) => {
+      if (!actor) throw new Error('Actor not available');
+      await actor.updatePaymentStatus(paymentId, status);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allPayments'] });
+      queryClient.invalidateQueries({ queryKey: ['myPayments'] });
+    },
   });
 }
