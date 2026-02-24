@@ -1,0 +1,41 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Add username/password authentication to admin dashboard",
+  "requirements": [
+    {
+      "id": "REQ-2",
+      "summary": "Replace OwnerGuard with username/password login screen for admin dashboard access",
+      "acceptanceCriteria": [
+        "Navigating to the admin dashboard shows a login form instead of the dashboard when not authenticated.",
+        "Entering correct credentials grants access to the full admin dashboard.",
+        "Entering incorrect credentials shows an error message and does not grant access.",
+        "A logout button is visible in the dashboard and clears the session, redirecting back to the login screen.",
+        "Page refresh while session is active keeps the user logged in (via sessionStorage).",
+        "The login form is visually consistent with the existing dark theme of the application."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/auth/AdminLoginForm.tsx",
+          "operation": "create",
+          "description": "Create a new AdminLoginForm component with username and password input fields, a 'Login' button, and inline error message display for invalid credentials. The form calls the backend verifyAdminCredentials method. On success, store a session flag in sessionStorage (e.g., 'adminAuthenticated') and notify the parent component. Style the form to match the existing dark theme using shadcn/ui components (Card, Input, Button, Alert). Include form validation and loading states during credential verification."
+        },
+        {
+          "path": "frontend/src/components/auth/OwnerGuard.tsx",
+          "operation": "modify",
+          "description": "Replace the current useOwnerAuth-based logic with a new authentication flow: check sessionStorage for 'adminAuthenticated' flag on mount and after successful login. If not authenticated, render the AdminLoginForm component instead of the children. When login succeeds, set the session flag and render children (the admin dashboard). Add a cleanup effect to handle session expiration on unmount if needed. Remove the dependency on useOwnerAuth but keep the loader component for consistency during session checks."
+        },
+        {
+          "path": "frontend/src/pages/OwnerDashboardPage.tsx",
+          "operation": "modify",
+          "description": "Add a 'Logout' button in the dashboard header or toolbar area that clears the 'adminAuthenticated' flag from sessionStorage and forces a re-render to show the login form again. Position the logout button prominently (e.g., top-right corner of the dashboard tabs section) using a Button component with variant 'outline' or 'destructive'. Ensure the logout action also clears any cached admin data from React Query if applicable."
+        },
+        {
+          "path": "frontend/src/hooks/useAdminSession.ts",
+          "operation": "create",
+          "description": "Create a custom React hook useAdminSession that encapsulates the admin session logic: reading and writing the 'adminAuthenticated' flag from sessionStorage, providing isAuthenticated state, login(username, password) function that calls backend verifyAdminCredentials, and logout() function that clears the session. Include error handling for failed login attempts and return error state. This hook will be used by OwnerGuard and OwnerDashboardPage to manage the session centrally."
+        }
+      ]
+    }
+  ]
+}

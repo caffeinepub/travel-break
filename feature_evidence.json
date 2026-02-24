@@ -1,0 +1,27 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-replace-or-augment-the-current-admin-dashboard-access-flow-currently-guarded-by-ownerguard-useownerauth-with-a-username-and-password-login-screen-when-a-user-navigates-to-the-admin-dashboard-route-show-a-centered-login-form-with-username-and-password-fields-and-a-login-button-before-granting-access-to-the-dashboard-on-successful-credential-verification-via-the-backend-store-a-session-flag-e-g-in-react-state-or-sessionstorage-and-render-the-dashboard-on-failure-display-an-inline-error-message-invalid-username-or-password-include-a-logout-button-inside-the-dashboard-that-clears-the-session-and-returns-to-the-login-screen",
+      "featureTitle": "Replace or augment the current admin dashboard access flow (currently guarded by `OwnerGuard` / `useOwnerAuth`) with a username and password login screen. When a user navigates to the admin dashboard route, show a centered login form with username and password fields and a 'Login' button before granting access to the dashboard. On successful credential verification via the backend, store a session flag (e.g., in React state or sessionStorage) and render the dashboard. On failure, display an inline error message ('Invalid username or password'). Include a 'Logout' button inside the dashboard that clears the session and returns to the login screen.",
+      "files": [
+        "frontend/src/components/auth/AdminLoginForm.tsx",
+        "frontend/src/components/auth/OwnerGuard.tsx",
+        "frontend/src/hooks/useAdminSession.ts",
+        "frontend/src/pages/OwnerDashboardPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

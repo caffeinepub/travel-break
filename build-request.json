@@ -1,0 +1,62 @@
+{
+  "kind": "build_request",
+  "title": "Add username/password authentication to admin dashboard",
+  "projectName": "Travel Admin Portal",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Add a backend mechanism to store and verify a hardcoded or configurable admin username and password. Expose a function (e.g., `verifyAdminCredentials(username: Text, password: Text) : async Bool`) that returns true if the credentials match. Store the credentials securely in stable state (hashed or as a stable variable). Provide a default username and password that can be changed by the owner.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "use username and password to access admin dash board"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A backend function exists that accepts a username and password and returns a boolean indicating success or failure.",
+        "Default credentials are defined and functional.",
+        "Incorrect credentials return false."
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Replace or augment the current admin dashboard access flow (currently guarded by `OwnerGuard` / `useOwnerAuth`) with a username and password login screen. When a user navigates to the admin dashboard route, show a centered login form with username and password fields and a 'Login' button before granting access to the dashboard. On successful credential verification via the backend, store a session flag (e.g., in React state or sessionStorage) and render the dashboard. On failure, display an inline error message ('Invalid username or password'). Include a 'Logout' button inside the dashboard that clears the session and returns to the login screen.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "use username and password to access admin dash board"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Navigating to the admin dashboard shows a login form instead of the dashboard when not authenticated.",
+        "Entering correct credentials grants access to the full admin dashboard.",
+        "Entering incorrect credentials shows an error message and does not grant access.",
+        "A logout button is visible in the dashboard and clears the session, redirecting back to the login screen.",
+        "Page refresh while session is active keeps the user logged in (via sessionStorage).",
+        "The login form is visually consistent with the existing dark theme of the application."
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts or frontend/src/hooks/useActor.ts.",
+    "Do not remove Internet Identity authentication from other parts of the app — only the admin dashboard access flow is affected.",
+    "The admin login session must be frontend-only (sessionStorage or React state); do not create new backend session/token management beyond credential verification."
+  ],
+  "nonGoals": [
+    "Replacing Internet Identity login for regular users.",
+    "Multi-user admin accounts or role management.",
+    "Password reset or email-based recovery flows.",
+    "Encrypting passwords with external cryptographic libraries."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

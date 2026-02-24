@@ -1,0 +1,60 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-24T13:37:34.256Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 2,
+    "implemented": 1,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Add a backend mechanism to store and verify a hardcoded or configurable admin username and password. Expose a function (e.g., `verifyAdminCredentials(username: Text, password: Text) : async Bool`) that returns true if the credentials match. Store the credentials securely in stable state (hashed or as a stable variable). Provide a default username and password that can be changed by the owner.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Replace or augment the current admin dashboard access flow (currently guarded by `OwnerGuard` / `useOwnerAuth`) with a username and password login screen. When a user navigates to the admin dashboard route, show a centered login form with username and password fields and a 'Login' button before granting access to the dashboard. On successful credential verification via the backend, store a session flag (e.g., in React state or sessionStorage) and render the dashboard. On failure, display an inline error message ('Invalid username or password'). Include a 'Logout' button inside the dashboard that clears the session and returns to the login screen.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/auth/AdminLoginForm.tsx",
+          "frontend/src/components/auth/OwnerGuard.tsx",
+          "frontend/src/pages/OwnerDashboardPage.tsx",
+          "frontend/src/hooks/useAdminSession.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/auth/AdminLoginForm.tsx",
+          "frontend/src/components/auth/OwnerGuard.tsx",
+          "frontend/src/pages/OwnerDashboardPage.tsx",
+          "frontend/src/hooks/useAdminSession.ts"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "build-request.json",
+    "caffeine.lock.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/auth/AdminLoginForm.tsx",
+    "frontend/src/components/auth/OwnerGuard.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useAdminSession.ts",
+    "frontend/src/pages/OwnerDashboardPage.tsx",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}
